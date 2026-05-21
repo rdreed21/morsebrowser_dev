@@ -26,6 +26,7 @@ import { GeneralUtils } from './utils/general'
 import MorseSettingsHandler from './settings/morseSettingsHandler'
 import { clear, log } from 'console'
 import ScreenWakeLock from './utils/screenWakeLock'
+import { applyTheme } from './theme/theme'
 
 export class MorseViewModel {
   accessibilityAnnouncement:ko.Observable<string> = ko.observable(undefined)
@@ -44,6 +45,7 @@ export class MorseViewModel {
   rawText:ko.Observable<string> = ko.observable()
   showingText:ko.Observable<string> = ko.observable('')
   showRaw:ko.Observable<boolean> = ko.observable(true)
+  darkMode:ko.Observable<boolean> = ko.observable(false)
   volume:ko.Observable<number> = ko.observable()
   noiseHidden:ko.Observable<boolean> = ko.observable(true)
   noiseEnabled:ko.Observable<boolean> = ko.observable(false)
@@ -196,9 +198,12 @@ export class MorseViewModel {
 
     this.showRaw(false)
 
+    this.darkMode.subscribe((enabled) => applyTheme(enabled))
+    applyTheme(this.darkMode())
+
     this.applyEnabled = ko.computed(() => {
-      if (this.lessons && this.lessons.customGroup()) {
-        return true
+      if (this.lessons && this.lessons.ifCustomGroup()) {
+        return !!this.lessons.customGroup()?.trim()
       }
       return this.lessons.selectedDisplay().display && !this.lessons.selectedDisplay().isDummy
     }, this)
@@ -455,6 +460,20 @@ export class MorseViewModel {
     }
   }
 
+  collapseSettingsAccordions = () => {
+    const area = document.getElementById('accordionArea')
+    if (!area) {
+      return
+    }
+    area.querySelectorAll('.accordion-collapse.show').forEach((panel) => {
+      panel.classList.remove('show')
+    })
+    area.querySelectorAll('.accordion-button').forEach((button) => {
+      button.classList.add('collapsed')
+      button.setAttribute('aria-expanded', 'false')
+    })
+  }
+
   doPlay = (playJustEnded:boolean, fromPlayButton:boolean) => {
     if (!this.rawText().trim()) {
       return
@@ -469,6 +488,9 @@ export class MorseViewModel {
     // 4. user might press play to re-play a word
     const wasPlayerPlaying = this.playerPlaying()
     const freshStart = fromPlayButton && !wasPlayerPlaying
+    if (freshStart) {
+      this.collapseSettingsAccordions()
+    }
     if (!this.lastPlayFullStart || (this.lastFullPlayTime() > this.lastPlayFullStart)) {
       this.lastPlayFullStart = Date.now()
     }
@@ -822,7 +844,7 @@ export class MorseViewModel {
         if (!this.loopnoshuffle()) {
           this.shuffleWords(true)
         }
-        this.doPlay(false, true)
+        this.doPlay(false, false)
       }
     }, true)
     if (fullRewind) {
@@ -907,7 +929,7 @@ export class MorseViewModel {
   }
 
   doApply = (fromUserClick:boolean = false) => {
-    if (this.lessons.customGroup()) {
+    if (this.lessons.ifCustomGroup()) {
       this.lessons.doCustomGroup()
     } else {
       // skip presets if user clicked, assume they wanted to change something
