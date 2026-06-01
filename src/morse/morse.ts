@@ -599,18 +599,37 @@ export class MorseViewModel {
     return maxBufferReached
   }
 
-  // Speed Racer: speak the current card's answer spelled out letter-by-letter,
-  // then play the recap (final) morse at the starting speed.
+  // Speed Racer: speak the current card one letter at a time with a gap between
+  // each letter, then play the recap morse at the starting speed.
   speakSpeedRacerCard = () => {
     const currentWord = this.words()[this.currentIndex()]
-    // force spelling so e.g. "REA" is spoken "R E A" instead of as a word
-    const phrase = this.prepPhraseToSpeakForFinal(currentWord.speakText(true))
-    this.morseVoice.speakPhrase(phrase, () => {
+    const chars = currentWord.displayWord.replace(/\s+/g, '').split('')
+    // inter-letter gap: honour voiceThinkingTime but enforce a 400 ms minimum so
+    // letters are always clearly separated regardless of user settings
+    const interLetterMs = Math.max(400, this.morseVoice.voiceThinkingTime() * 1000)
+    // gap between last letter and recap morse: 800 ms minimum
+    const preRecapMs = Math.max(800, this.morseVoice.voiceAfterThinkingTime() * 1000)
+
+    const speakChar = (idx: number) => {
       if (!this.playerPlaying()) return
-      this.speedRacerPhase = 'final'
-      this.cardBufferManager.populateBuffer(1, 0)
-      this.doPlay(true, false)
-    })
+      if (idx >= chars.length) {
+        setTimeout(() => {
+          if (!this.playerPlaying()) return
+          this.speedRacerPhase = 'final'
+          this.cardBufferManager.populateBuffer(1, 0)
+          this.doPlay(true, false)
+        }, preRecapMs)
+        return
+      }
+      const letter = this.prepPhraseToSpeakForFinal(chars[idx].toUpperCase() + '\n')
+      this.morseVoice.speakPhrase(letter, () => {
+        if (!this.playerPlaying()) return
+        setTimeout(() => speakChar(idx + 1), interLetterMs)
+      })
+    }
+
+    // brief pause before first letter
+    setTimeout(() => speakChar(0), interLetterMs)
   }
 
   playEnded = (fromVoiceOrTrail) => {
@@ -702,9 +721,13 @@ export class MorseViewModel {
         }
 
         const getCardSpaceTimerHandleDelay = () => {
-          // Speed Racer: keep a gap (Card Wait) between every speed step, not just
-          // between cards, so the decreasing speeds are clearly separated.
           if (this.settings.speed.speedRacer()) {
+            if (cardChanged) {
+              // transitioning to the next card (after recap or after racing-only):
+              // enforce an 800 ms minimum so there is always a clear break
+              return Math.max(this.cardSpace() * 1000, 800)
+            }
+            // between speed steps within the same card
             return this.cardSpace() * 1000
           }
           if (!cardChanged && hasMoreMorse) {
