@@ -66,6 +66,15 @@ export default class MorseSettingsHandler {
       new SavedSettingsInfo('intervalFwpmText', morseViewModel.settings.speed.intervalFwpmText())
     )
     savedInfos.push(
+      new SavedSettingsInfo('speedRacerEnabled', morseViewModel.settings.speed.speedRacerEnabled())
+    )
+    savedInfos.push(
+      new SavedSettingsInfo('speedRacerMultipliers', morseViewModel.settings.speed.speedRacerMultipliers())
+    )
+    savedInfos.push(
+      new SavedSettingsInfo('speedRacerInterRepeatGap', morseViewModel.settings.speed.speedRacerInterRepeatGap())
+    )
+    savedInfos.push(
       new SavedSettingsInfo('voiceBufferMaxLength', morseViewModel.morseVoice.voiceBufferMaxLength())
     )
     savedInfos.push(

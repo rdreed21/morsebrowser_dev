@@ -389,10 +389,19 @@ export class MorseViewModel {
     }
   }
 
-  getMorseStringToWavBufferConfig = (text, isToneTest:boolean = false) => {
+  getMorseStringToWavBufferConfig = (text, isToneTest:boolean = false, applySpeedRacer:boolean = false) => {
     const config = new SoundMakerConfig()
     config.word = MorseStringUtils.doReplacements(text)
-    const speeds = this.settings.speed.getApplicableSpeed(this.playingTime())
+    let speeds = this.settings.speed.getApplicableSpeed(this.playingTime())
+    // Speed Racer overrides the per-card speed based on which repeat we're
+    // playing. Only apply on the live play path (caller passes true). Time
+    // estimates and wav downloads must use the unmodified target speed.
+    if (applySpeedRacer && this.settings.speed.speedRacerEnabled() && config.word && config.word.trim().length > 0) {
+      const { index, total } = this.cardBufferManager.getRepeatState()
+      if (total > 1 && index >= 0) {
+        speeds = this.settings.speed.applySpeedRacer(speeds, index, total)
+      }
+    }
     config.wpm = parseInt(speeds.wpm as any)
     config.fwpm = parseInt(speeds.fwpm as any)
     config.ditFrequency = parseInt(this.settings.frequency.ditFrequency() as any)
@@ -537,12 +546,21 @@ export class MorseViewModel {
         1: play 2 times
         2: play 3 times etc.
         */
-        const repeats = parseInt(this.numberOfRepeats() as any) === 0 ? 0 : parseInt(this.numberOfRepeats() as any) + 1
+        // Speed Racer owns the per-card play count and the inter-repeat gap
+        // when enabled. It uses (variation count + 1) plays — the +1 is the
+        // post-speak final play.
+        const racerOn = this.settings.speed.speedRacerEnabled()
+        const racerTotalPlays = racerOn ? this.settings.speed.getRacerTotalPlays() : 0
+        const repeats = racerTotalPlays > 1
+          ? racerTotalPlays
+          : (parseInt(this.numberOfRepeats() as any) === 0 ? 0 : parseInt(this.numberOfRepeats() as any) + 1)
+        const additionalWordSpaces = racerTotalPlays > 1
+          ? Math.max(0, parseInt(this.settings.speed.speedRacerInterRepeatGap() as any) || 0)
+          : parseInt(this.morseVoice.speakFirstAdditionalWordspaces() as any)
         const config = this.getMorseStringToWavBufferConfig(
-          this.cardBufferManager.getNextMorse(
-            repeats,
-            parseInt(this.morseVoice.speakFirstAdditionalWordspaces() as any)
-          )
+          this.cardBufferManager.getNextMorse(repeats, additionalWordSpaces),
+          false,
+          true
         )
         this.addToVoiceBuffer()
         const playerCmd = () => {
@@ -554,7 +572,30 @@ export class MorseViewModel {
           }
         }
 
-        if (!this.morseVoice.speakFirst() ||
+        // Speed Racer: speak the word right before the final post-speak play.
+        const racerState = this.cardBufferManager.getRepeatState()
+        const isSpeedRacerFinalPlay = racerOn &&
+          this.settings.speed.isRacerFinalPlay(racerState.index) &&
+          config.word && config.word.trim().length > 0
+
+        if (isSpeedRacerFinalPlay) {
+          const currentWord = this.words()[this.currentIndex()]
+          const phraseToSpeak = this.prepPhraseToSpeakForFinal(
+            currentWord.speakText(this.morseVoice.voiceSpelling())
+          )
+          setTimeout(() => {
+            this.morseVoice.speakPhrase(phraseToSpeak, () => {
+              if (this.playerPlaying()) {
+                playerCmd()
+              }
+            })
+          }, this.morseVoice.voiceThinkingTime() * 1000)
+        } else if (racerOn) {
+          // Speed Racer manages its own speak step. Bypass speakFirst entirely
+          // so a stale speakFirst toggle can't add a voiceThinkingTime delay
+          // before the *first* variation play.
+          playerCmd()
+        } else if (!this.morseVoice.speakFirst() ||
             (this.morseVoice.speakFirst() && (this.morseVoice.speakFirstLastCardIndex === this.currentIndex()))
         ) {
           playerCmd()

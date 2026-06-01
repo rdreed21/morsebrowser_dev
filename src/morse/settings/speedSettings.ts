@@ -14,6 +14,7 @@ export class ApplicableSpeed {
     this.fwpm = fwpm
   }
 }
+
 export default class SpeedSettings implements ICookieHandler {
   wpm: ko.PureComputed<number>
   fwpm: ko.PureComputed<number>
@@ -24,8 +25,21 @@ export default class SpeedSettings implements ICookieHandler {
   intervalTimingsText:ko.Observable<string>
   intervalWpmText:ko.Observable<string>
   intervalFwpmText:ko.Observable<string>
+  speedRacerEnabled: ko.Observable<boolean>
+  // Comma-separated list of multipliers applied to the user's main WPM
+  // (top of page). Each non-zero entry produces one variation play whose
+  // WPM = round(mainWpm * multiplier). Zero entries are skipped. The post-
+  // speak final play uses the *first* non-zero multiplier, not the last.
+  // Default is the Morse Code Ninja sequence: 1.5, 1.35, 1.175, 1.0
+  // (https://morsecode.ninja).
+  speedRacerMultipliers: ko.Observable<string>
+  // Extra wordspace dits inserted between repeats of the same card (on top
+  // of the normal trailing wordspace). 0 keeps the existing tight pacing.
+  speedRacerInterRepeatGap: ko.Observable<number>
   morseViewModel:MorseViewModel
   variableSpeedDisplay: ko.Computed<boolean>
+  speedRacerPreview: ko.Computed<string>
+  speedRacerVariationCount: ko.Computed<number>
   vWpm: ko.Observable<number>
   vFwpm: ko.Observable<number>
   vm:MorseViewModel
@@ -40,8 +54,23 @@ export default class SpeedSettings implements ICookieHandler {
     this.intervalTimingsText = ko.observable('')
     this.intervalWpmText = ko.observable('')
     this.intervalFwpmText = ko.observable('')
+    this.speedRacerEnabled = ko.observable(false)
+    this.speedRacerMultipliers = ko.observable('1.5, 1.35, 1.175, 1.0')
+    this.speedRacerInterRepeatGap = ko.observable(0)
     this.vWpm = ko.observable(0)
     this.vFwpm = ko.observable(0)
+
+    // Mutual exclusion: turning on one mode turns off the other.
+    this.speedInterval.subscribe((v) => {
+      if (v && this.speedRacerEnabled()) {
+        this.speedRacerEnabled(false)
+      }
+    })
+    this.speedRacerEnabled.subscribe((v) => {
+      if (v && this.speedInterval()) {
+        this.speedInterval(false)
+      }
+    })
 
     this.wpm = ko.pureComputed({
       read: () => {
@@ -81,9 +110,85 @@ export default class SpeedSettings implements ICookieHandler {
       return (this.speedInterval() && this.intervalTimingsText() && vm.playerPlaying())
     }, this)
 
+    // Variation count = number of non-zero multipliers.
+    this.speedRacerVariationCount = ko.computed(() => {
+      return SpeedSettings.parseMultipliers(this.speedRacerMultipliers()).length
+    }, this)
+
+    // Live preview of the per-card sequence, e.g.
+    // "30 → 27 → 24 → 20 → speak → 30 wpm".
+    this.speedRacerPreview = ko.computed(() => {
+      if (!this.speedRacerEnabled()) {
+        return ''
+      }
+      const target = Math.round(parseFloat(this.wpm() as any) || 0)
+      const mults = SpeedSettings.parseMultipliers(this.speedRacerMultipliers())
+      if (mults.length === 0 || target <= 0) {
+        return ''
+      }
+      const wpms = mults.map(m => Math.max(1, Math.round(target * m)))
+      const finalWpm = wpms[0]
+      return wpms.join(' → ') + ` → speak → ${finalWpm} wpm`
+    }, this)
+
     this.wpm.extend({ saveCookie: 'wpm' } as ko.ObservableExtenderOptions<number>)
     this.fwpm.extend({ saveCookie: 'fwpm' } as ko.ObservableExtenderOptions<number>)
     this.syncWpm.extend({ saveCookie: 'syncWpm' } as ko.ObservableExtenderOptions<boolean>)
+    this.speedRacerEnabled.extend({ saveCookie: 'speedRacerEnabled' } as ko.ObservableExtenderOptions<boolean>)
+    this.speedRacerMultipliers.extend({ saveCookie: 'speedRacerMultipliers' } as ko.ObservableExtenderOptions<string>)
+    this.speedRacerInterRepeatGap.extend({ saveCookie: 'speedRacerInterRepeatGap' } as ko.ObservableExtenderOptions<number>)
+  }
+
+  // Parse the multiplier list. Drops non-finite entries; drops zeros (the
+  // user's "skip this slot" sentinel); rejects negatives. Order is preserved.
+  static parseMultipliers = (s:string):number[] => {
+    if (!s) return []
+    return s.split(',')
+      .map(x => parseFloat(x))
+      .filter(n => Number.isFinite(n) && n > 0)
+  }
+
+  // Total audible morse plays per card when Speed Racer is on:
+  // one play per non-zero multiplier, plus one final play after the TTS step.
+  // The TTS step itself is not counted (it isn't a morse play).
+  getRacerTotalPlays = ():number => {
+    const n = SpeedSettings.parseMultipliers(this.speedRacerMultipliers()).length
+    return n > 0 ? n + 1 : 0
+  }
+
+  // True iff playIndex is the final post-speak play. Caller passes the index
+  // emitted by the buffer.
+  isRacerFinalPlay = (playIndex:number):boolean => {
+    const total = this.getRacerTotalPlays()
+    return total > 1 && playIndex === total - 1
+  }
+
+  /**
+   * Apply Speed Racer to a base ApplicableSpeed for the given play slot.
+   * Variation play (0..N-1) uses round(base.wpm * multipliers[playIndex]).
+   * Final play (N) uses round(base.wpm * multipliers[0]) — the *first* non-
+   * zero multiplier, which is the "initial" speed in the user's mental model.
+   * FWPM is taken from base (the user's main FWPM), capped at the variation
+   * WPM so we never violate fwpm <= wpm.
+   */
+  applySpeedRacer = (base:ApplicableSpeed, playIndex:number, _total:number):ApplicableSpeed => {
+    if (!this.speedRacerEnabled() || playIndex < 0) {
+      return base
+    }
+    const mults = SpeedSettings.parseMultipliers(this.speedRacerMultipliers())
+    if (mults.length === 0) {
+      return base
+    }
+    const isFinal = playIndex >= mults.length
+    const multiplier = isFinal ? mults[0] : mults[playIndex]
+    const variationWpm = Math.max(1, Math.round(base.wpm * multiplier))
+    let variationFwpm = base.fwpm
+    if (variationFwpm > variationWpm) {
+      variationFwpm = variationWpm
+    }
+    this.vWpm(variationWpm)
+    this.vFwpm(variationFwpm)
+    return new ApplicableSpeed(variationWpm, variationFwpm)
   }
 
   getApplicableSpeed = (playingTimeInfo:PlayingTimeInfo) => {
@@ -156,6 +261,22 @@ export default class SpeedSettings implements ICookieHandler {
     target = cookies.find(x => x.key === 'intervalFwpmText')
     if (target) {
       this.intervalFwpmText(target.val)
+    }
+
+    target = cookies.find(x => x.key === 'speedRacerEnabled')
+    if (target) {
+      this.speedRacerEnabled(GeneralUtils.booleanize(target.val))
+    }
+
+    target = cookies.find(x => x.key === 'speedRacerMultipliers')
+    if (target) {
+      this.speedRacerMultipliers(target.val)
+    }
+
+    target = cookies.find(x => x.key === 'speedRacerInterRepeatGap')
+    if (target) {
+      const n = parseInt(target.val)
+      if (Number.isFinite(n) && n >= 0) this.speedRacerInterRepeatGap(n)
     }
   }
 

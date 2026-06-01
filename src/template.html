@@ -382,7 +382,7 @@
                                                 id="btncheckspeedinterval" name="btncheckspeedinterval"
                                                 aria-label="Speed Intervals"
                                                 data-bind="checked: settings.speed.speedInterval"
-                                                title="Enables variable speeds in time intervals you define">
+                                                title="Vary speed over time. Mutually exclusive with Speed Racer.">
                                             <label class="btn btn-outline-primary" for="btncheckspeedinterval"
                                                 aria-hidden="true">
                                                 <img data-bind="attr:{ src: morseLoadImages().getSrc('rocketTakeoffImage')}"
@@ -442,7 +442,90 @@
                                         </div>
                                     </div>
 
-                                
+                                    <!--speed racer-->
+                                    <div class="input-group flex-wrap">
+                                        <div class="col-auto">
+                                            <input type="checkbox" class="btn-check" autocomplete="off"
+                                                id="btncheckspeedracer" name="btncheckspeedracer"
+                                                aria-label="Speed Racer"
+                                                data-bind="checked: settings.speed.speedRacerEnabled"
+                                                title="Vary speed across each card's repeats. Mutually exclusive with Speed Intervals.">
+                                            <label class="btn btn-outline-primary" for="btncheckspeedracer"
+                                                aria-hidden="true">
+                                                <img data-bind="attr:{ src: morseLoadImages().getSrc('speedometerImage')}"
+                                                    alt="">&nbsp;Speed Racer&nbsp;
+                                                <img data-bind="attr:{ src: settings.speed.speedRacerEnabled() ? morseLoadImages().getSrc('checkImage') : morseLoadImages().getSrc('circleImage')}"
+                                                    alt="" />
+                                            </label>
+                                        </div>
+
+                                        <span class="input-group-text"
+                                            style="max-width:600px;"
+                                            data-bind="visible: settings.speed.speedRacerEnabled() &amp;&amp; settings.speed.speedRacerPreview()"
+                                            title="Per-card sequence derived from main WPM and the multiplier list.">
+                                            <strong>Sequence:</strong>&nbsp;<span data-bind="text: settings.speed.speedRacerPreview()"></span>
+                                        </span>
+
+                                        <button type="button" class="btn btn-outline-secondary"
+                                            data-bs-toggle="collapse" data-bs-target="#speedRacerAdvanced"
+                                            aria-expanded="false" aria-controls="speedRacerAdvanced"
+                                            data-bind="visible: settings.speed.speedRacerEnabled()"
+                                            title="Show advanced multiplier list and timing controls.">
+                                            Advanced
+                                        </button>
+
+                                        <span class="input-group-text text-warning"
+                                            data-bind="visible: settings.speed.speedRacerEnabled() &amp;&amp; settings.speed.speedRacerVariationCount() === 0"
+                                            title="Speed Racer needs at least one non-zero multiplier.">
+                                            <img data-bind="attr:{ src: morseLoadImages().getSrc('exclamationoctagonImage')}"
+                                                width="16" height="16" alt="">&nbsp;Set at least one non-zero multiplier
+                                        </span>
+                                    </div>
+
+                                    <!--speed racer: advanced (collapsed)-->
+                                    <div id="speedRacerAdvanced" class="collapse col-12 mt-2"
+                                        data-bind="visible: settings.speed.speedRacerEnabled()">
+                                        <div class="card card-body bg-light">
+                                            <div class="input-group input-group-sm mb-2">
+                                                <label for="speedRacerMultipliers" class="input-group-text"
+                                                    title="Comma-separated multipliers applied to your main WPM. Each non-zero entry adds one variation play. Default is the Morse Code Ninja sequence: 1.5, 1.35, 1.175, 1.0. Use 0 to skip a slot.">
+                                                    Multipliers
+                                                </label>
+                                                <input id="speedRacerMultipliers" name="speedRacerMultipliers" type="text"
+                                                    style="max-width:280px;" class="form-control"
+                                                    data-bind="textInput: settings.speed.speedRacerMultipliers"
+                                                    title="Comma-separated multipliers (e.g. 1.5, 1.35, 1.175, 1.0). Each non-zero value plays the card once at round(mainWpm * multiplier). 0 = skip.">
+                                                <span class="input-group-text small text-muted">
+                                                    Default: <a href="https://morsecode.ninja" target="_blank" rel="noopener">Morse Code Ninja</a>&nbsp;1.5, 1.35, 1.175, 1.0
+                                                </span>
+                                            </div>
+
+                                            <div class="input-group input-group-sm mb-2">
+                                                <label for="speedRacerInterRepeatGap" class="input-group-text"
+                                                    title="Extra wordspaces inserted between repeats of the same card. 0 keeps the existing tight pacing. Increase to slow down the sequence within a card.">
+                                                    Gap between repeats (wordspaces)
+                                                </label>
+                                                <input id="speedRacerInterRepeatGap" name="speedRacerInterRepeatGap" type="number"
+                                                    style="max-width:80px;" class="form-control"
+                                                    min="0" max="20" step="1"
+                                                    data-bind="textInput: settings.speed.speedRacerInterRepeatGap"
+                                                    title="Extra wordspaces between each play of the same card.">
+                                            </div>
+
+                                            <div class="small text-muted">
+                                                <strong>Other timing:</strong>
+                                                set time between cards with <a href="#cardSpace">CARD WAIT</a> above.
+                                                Pause before TTS speaks the word with <em>thinking time</em> in the Voice section.
+                                                <br>
+                                                <strong>Voice / spelling:</strong>
+                                                Speed Racer uses your existing Voice settings.
+                                                If <em>Voice</em> is on with <em>Spell</em> enabled the word is spelled letter-by-letter; otherwise it is spoken naturally.
+                                                You don't need to enable <em>Speak first</em> &mdash; Speed Racer triggers TTS itself before the final play.
+                                            </div>
+                                        </div>
+                                    </div>
+
+
                                     <!--noise toggle-->
                                     <div class="col-auto" data-bind="visible: !noiseHidden">
 
