@@ -599,6 +599,20 @@ export class MorseViewModel {
     return maxBufferReached
   }
 
+  // Speed Racer: speak the current card's answer spelled out letter-by-letter,
+  // then play the recap (final) morse at the starting speed.
+  speakSpeedRacerCard = () => {
+    const currentWord = this.words()[this.currentIndex()]
+    // force spelling so e.g. "REA" is spoken "R E A" instead of as a word
+    const phrase = this.prepPhraseToSpeakForFinal(currentWord.speakText(true))
+    this.morseVoice.speakPhrase(phrase, () => {
+      if (!this.playerPlaying()) return
+      this.speedRacerPhase = 'final'
+      this.cardBufferManager.populateBuffer(1, 0)
+      this.doPlay(true, false)
+    })
+  }
+
   playEnded = (fromVoiceOrTrail) => {
     console.log(`playEnded fromVoiceOrTrail:${fromVoiceOrTrail}`)
     // voice or trail have timers that might call this after user has hit stop
@@ -622,16 +636,18 @@ export class MorseViewModel {
     const isNotLastWord = this.currentIndex() < this.words().length - 1
     const anyNewLines = this.rawText().indexOf('\n') !== -1
     const maxBufferReached = this.ifMaxVoiceBufferReached()
-    const needToSpeak = this.morseVoice.voiceEnabled() &&
+    const isSpeedRacer = this.settings.speed.speedRacer()
+    const needToSpeak = !isSpeedRacer &&
+      this.morseVoice.voiceEnabled() &&
       !fromVoiceOrTrail &&
       !this.cardBufferManager.hasMoreMorse() &&
       maxBufferReached &&
       !this.morseVoice.speakFirst()
 
-    const needToTrail = this.trailReveal() && !fromVoiceOrTrail
+    const needToTrail = !isSpeedRacer && this.trailReveal() && !fromVoiceOrTrail
     const speakAndTrail = needToSpeak && needToTrail
 
-    const noDelays = (!needToSpeak && !needToTrail) || this.settings.speed.speedRacer()
+    const noDelays = (!needToSpeak && !needToTrail) || isSpeedRacer
 
     const advanceTrail = () => {
       // note we eliminate the trail delays if speaking
@@ -671,15 +687,7 @@ export class MorseViewModel {
           if (this.settings.speed.speedRacer()) {
             if (this.speedRacerPhase === 'racing' && this.settings.speed.speedRacerVoiceRecap()) {
               this.speedRacerPhase = 'speaking'
-              this.morseVoice.voiceBuffer = []
-              this.addToVoiceBuffer()
-              const phrase = this.prepPhraseToSpeakForFinal(this.getPhraseToSpeakFromBuffer())
-              this.morseVoice.speakPhrase(phrase, () => {
-                if (!this.playerPlaying()) return
-                this.speedRacerPhase = 'final'
-                this.cardBufferManager.populateBuffer(1, 0)
-                this.doPlay(true, false)
-              })
+              this.speakSpeedRacerCard()
               return
             }
             // 'racing' with voiceRecap off, or 'final': reset and fall through to advance
@@ -694,6 +702,11 @@ export class MorseViewModel {
         }
 
         const getCardSpaceTimerHandleDelay = () => {
+          // Speed Racer: keep a gap (Card Wait) between every speed step, not just
+          // between cards, so the decreasing speeds are clearly separated.
+          if (this.settings.speed.speedRacer()) {
+            return this.cardSpace() * 1000
+          }
           if (!cardChanged && hasMoreMorse) {
             return 0
           } else {
@@ -709,15 +722,7 @@ export class MorseViewModel {
         // Speed Racer: run speak+recap on last card before pausing
         if (this.settings.speed.speedRacer() && this.speedRacerPhase === 'racing' && this.settings.speed.speedRacerVoiceRecap()) {
           this.speedRacerPhase = 'speaking'
-          this.morseVoice.voiceBuffer = []
-          this.addToVoiceBuffer()
-          const phrase = this.prepPhraseToSpeakForFinal(this.getPhraseToSpeakFromBuffer())
-          this.morseVoice.speakPhrase(phrase, () => {
-            if (!this.playerPlaying()) return
-            this.speedRacerPhase = 'final'
-            this.cardBufferManager.populateBuffer(1, 0)
-            this.doPlay(true, false)
-          })
+          this.speakSpeedRacerCard()
           return
         }
         this.speedRacerPhase = 'racing'
