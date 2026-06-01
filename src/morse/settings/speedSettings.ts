@@ -109,7 +109,7 @@ export default class SpeedSettings implements ICookieHandler {
     if (this.speedRacer()) {
       const start = parseInt(this.speedRacerStartWpm() as any)
       const mult = parseFloat(this.speedRacerMultiplier() as any)
-      const idx = this.vm.cardBufferManager.getServedIndex()
+      const idx = this.vm.cardBufferManager ? this.vm.cardBufferManager.getServedIndex() : 0
       const wpm = Math.max(1, Math.round(start / Math.pow(mult, idx)))
       return new ApplicableSpeed(wpm, wpm)
     }
