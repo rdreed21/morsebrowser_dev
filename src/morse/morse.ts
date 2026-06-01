@@ -576,6 +576,7 @@ export class MorseViewModel {
         const racerState = this.cardBufferManager.getRepeatState()
         const isSpeedRacerFinalPlay = racerOn &&
           this.settings.speed.isRacerFinalPlay(racerState.index) &&
+          this.settings.speed.speedRacerSpeakText() &&
           config.word && config.word.trim().length > 0
 
         if (isSpeedRacerFinalPlay) {

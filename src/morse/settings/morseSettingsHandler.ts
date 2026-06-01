@@ -75,6 +75,9 @@ export default class MorseSettingsHandler {
       new SavedSettingsInfo('speedRacerInterRepeatGap', morseViewModel.settings.speed.speedRacerInterRepeatGap())
     )
     savedInfos.push(
+      new SavedSettingsInfo('speedRacerSpeakText', morseViewModel.settings.speed.speedRacerSpeakText())
+    )
+    savedInfos.push(
       new SavedSettingsInfo('voiceBufferMaxLength', morseViewModel.morseVoice.voiceBufferMaxLength())
     )
     savedInfos.push(

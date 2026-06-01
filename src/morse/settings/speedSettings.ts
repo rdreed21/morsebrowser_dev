@@ -30,12 +30,13 @@ export default class SpeedSettings implements ICookieHandler {
   // (top of page). Each non-zero entry produces one variation play whose
   // WPM = round(mainWpm * multiplier). Zero entries are skipped. The post-
   // speak final play uses the *first* non-zero multiplier, not the last.
-  // Default is the Morse Code Ninja sequence: 1.5, 1.35, 1.175, 1.0
-  // (https://morsecode.ninja).
   speedRacerMultipliers: ko.Observable<string>
   // Extra wordspace dits inserted between repeats of the same card (on top
   // of the normal trailing wordspace). 0 keeps the existing tight pacing.
   speedRacerInterRepeatGap: ko.Observable<number>
+  // Whether to speak the card text via TTS before the final post-speak play.
+  // When false, the final play happens immediately with no spoken word.
+  speedRacerSpeakText: ko.Observable<boolean>
   morseViewModel:MorseViewModel
   variableSpeedDisplay: ko.Computed<boolean>
   speedRacerPreview: ko.Computed<string>
@@ -57,6 +58,7 @@ export default class SpeedSettings implements ICookieHandler {
     this.speedRacerEnabled = ko.observable(false)
     this.speedRacerMultipliers = ko.observable('1.5, 1.35, 1.175, 1.0')
     this.speedRacerInterRepeatGap = ko.observable(0)
+    this.speedRacerSpeakText = ko.observable(true)
     this.vWpm = ko.observable(0)
     this.vFwpm = ko.observable(0)
 
@@ -137,6 +139,7 @@ export default class SpeedSettings implements ICookieHandler {
     this.speedRacerEnabled.extend({ saveCookie: 'speedRacerEnabled' } as ko.ObservableExtenderOptions<boolean>)
     this.speedRacerMultipliers.extend({ saveCookie: 'speedRacerMultipliers' } as ko.ObservableExtenderOptions<string>)
     this.speedRacerInterRepeatGap.extend({ saveCookie: 'speedRacerInterRepeatGap' } as ko.ObservableExtenderOptions<number>)
+    this.speedRacerSpeakText.extend({ saveCookie: 'speedRacerSpeakText' } as ko.ObservableExtenderOptions<boolean>)
   }
 
   // Restore the configurable Speed Racer fields to their constructor defaults.
@@ -145,6 +148,7 @@ export default class SpeedSettings implements ICookieHandler {
   resetSpeedRacerDefaults = () => {
     this.speedRacerMultipliers('1.5, 1.35, 1.175, 1.0')
     this.speedRacerInterRepeatGap(0)
+    this.speedRacerSpeakText(true)
   }
 
   // Parse the multiplier list. Drops non-finite entries; drops zeros (the
@@ -285,6 +289,11 @@ export default class SpeedSettings implements ICookieHandler {
     if (target) {
       const n = parseInt(target.val)
       if (Number.isFinite(n) && n >= 0) this.speedRacerInterRepeatGap(n)
+    }
+
+    target = cookies.find(x => x.key === 'speedRacerSpeakText')
+    if (target) {
+      this.speedRacerSpeakText(GeneralUtils.booleanize(target.val))
     }
   }
 

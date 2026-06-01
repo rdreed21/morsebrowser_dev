@@ -488,7 +488,7 @@
                                         <div class="card card-body bg-light">
                                             <div class="input-group input-group-sm mb-2">
                                                 <label for="speedRacerMultipliers" class="input-group-text"
-                                                    title="Comma-separated multipliers applied to your main WPM. Each non-zero entry adds one variation play. Default is the Morse Code Ninja sequence: 1.5, 1.35, 1.175, 1.0. Use 0 to skip a slot.">
+                                                    title="Comma-separated multipliers applied to your main WPM. Each non-zero entry adds one variation play. Default: 1.5, 1.35, 1.175, 1.0. Use 0 to skip a slot.">
                                                     Multipliers
                                                 </label>
                                                 <input id="speedRacerMultipliers" name="speedRacerMultipliers" type="text"
@@ -496,7 +496,7 @@
                                                     data-bind="textInput: settings.speed.speedRacerMultipliers"
                                                     title="Comma-separated multipliers (e.g. 1.5, 1.35, 1.175, 1.0). Each non-zero value plays the card once at round(mainWpm * multiplier). 0 = skip.">
                                                 <span class="input-group-text small text-muted">
-                                                    Default: <a href="https://morsecode.ninja" target="_blank" rel="noopener">Morse Code Ninja</a>&nbsp;1.5, 1.35, 1.175, 1.0
+                                                    Default: 1.5, 1.35, 1.175, 1.0
                                                 </span>
                                             </div>
 
@@ -512,10 +512,20 @@
                                                     title="Extra wordspaces between each play of the same card.">
                                             </div>
 
+                                            <div class="form-check mb-2">
+                                                <input id="speedRacerSpeakText" name="speedRacerSpeakText" type="checkbox"
+                                                    class="form-check-input"
+                                                    data-bind="checked: settings.speed.speedRacerSpeakText">
+                                                <label for="speedRacerSpeakText" class="form-check-label small"
+                                                    title="When on, the card text is spoken aloud before the final post-speak play. Turn off to skip the TTS step.">
+                                                    Speak text before final play
+                                                </label>
+                                            </div>
+
                                             <div class="mb-2">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary"
                                                     data-bind="click: ()=>settings.speed.resetSpeedRacerDefaults()"
-                                                    title="Restore Multipliers and Gap to their defaults (1.5, 1.35, 1.175, 1.0 and 0).">
+                                                    title="Restore Multipliers, Gap, and Speak text to their defaults (1.5, 1.35, 1.175, 1.0; 0; on).">
                                                     <img data-bind="attr:{ src: morseLoadImages().getSrc('bootstrapRebootImage')}"
                                                         height="16" width="16" alt="" />&nbsp;Reset to defaults
                                                 </button>
