@@ -139,6 +139,14 @@ export default class SpeedSettings implements ICookieHandler {
     this.speedRacerInterRepeatGap.extend({ saveCookie: 'speedRacerInterRepeatGap' } as ko.ObservableExtenderOptions<number>)
   }
 
+  // Restore the configurable Speed Racer fields to their constructor defaults.
+  // Leaves speedRacerEnabled alone so pressing this from inside the Advanced
+  // panel doesn't disable the feature out from under the user.
+  resetSpeedRacerDefaults = () => {
+    this.speedRacerMultipliers('1.5, 1.35, 1.175, 1.0')
+    this.speedRacerInterRepeatGap(0)
+  }
+
   // Parse the multiplier list. Drops non-finite entries; drops zeros (the
   // user's "skip this slot" sentinel); rejects negatives. Order is preserved.
   static parseMultipliers = (s:string):number[] => {

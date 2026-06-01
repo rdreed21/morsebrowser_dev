@@ -512,6 +512,15 @@
                                                     title="Extra wordspaces between each play of the same card.">
                                             </div>
 
+                                            <div class="mb-2">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                    data-bind="click: ()=>settings.speed.resetSpeedRacerDefaults()"
+                                                    title="Restore Multipliers and Gap to their defaults (1.5, 1.35, 1.175, 1.0 and 0).">
+                                                    <img data-bind="attr:{ src: morseLoadImages().getSrc('bootstrapRebootImage')}"
+                                                        height="16" width="16" alt="" />&nbsp;Reset to defaults
+                                                </button>
+                                            </div>
+
                                             <div class="small text-muted">
                                                 <strong>Other timing:</strong>
                                                 set time between cards with <a href="#cardSpace">CARD WAIT</a> above.
