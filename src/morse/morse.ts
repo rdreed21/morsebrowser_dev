@@ -100,6 +100,7 @@ export class MorseViewModel {
   applyEnabled:ko.Computed<boolean>
   numberOfRepeats:ko.Observable<number> = ko.observable(0)
   speedRacerPhase:'racing' | 'speaking' | 'final' = 'racing'
+  speedRacerToken: number = 0
   testTonePlaying:boolean = false
   testToneCount:number = 0
   testToneFlagHandle:any = 0
@@ -612,11 +613,13 @@ export class MorseViewModel {
     // gap between last letter and recap morse: 800 ms minimum
     const preRecapMs = Math.max(800, this.morseVoice.voiceAfterThinkingTime() * 1000)
 
+    const token = this.speedRacerToken
+
     const speakChar = (idx: number) => {
-      if (!this.playerPlaying()) return
+      if (token !== this.speedRacerToken || !this.playerPlaying()) return
       if (idx >= chars.length) {
         setTimeout(() => {
-          if (!this.playerPlaying()) return
+          if (token !== this.speedRacerToken || !this.playerPlaying()) return
           this.speedRacerPhase = 'final'
           this.cardBufferManager.populateBuffer(1, 0)
           this.doPlay(true, false)
@@ -625,13 +628,16 @@ export class MorseViewModel {
       }
       const letter = this.prepPhraseToSpeakForFinal(chars[idx].toUpperCase() + '\n')
       this.morseVoice.speakPhrase(letter, () => {
-        if (!this.playerPlaying()) return
+        if (token !== this.speedRacerToken || !this.playerPlaying()) return
         setTimeout(() => speakChar(idx + 1), interLetterMs)
       })
     }
 
     // brief pause before first letter
-    setTimeout(() => speakChar(0), interLetterMs)
+    setTimeout(() => {
+      if (token !== this.speedRacerToken) return
+      speakChar(0)
+    }, interLetterMs)
   }
 
   playEnded = (fromVoiceOrTrail) => {
@@ -903,6 +909,7 @@ export class MorseViewModel {
       this.isPaused(false)
     }
     this.playerPlaying(false)
+    this.speedRacerToken++
     this.morseWordPlayer.pause(() => {
       // we're here if a complete rawtext finished
       this.lastFullPlayTime(Date.now())

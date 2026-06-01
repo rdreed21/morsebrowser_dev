@@ -58,6 +58,7 @@ export default class MorseLessonPlugin implements ICookieHandler {
   customSettingsOptions:SettingsOption[] = []
   queryStringSettingsOn:boolean = false
   lessonPickerDomInitialized:boolean = false
+  settingsPresetsRequestSeq: number = 0
 
   constructor (morseSettings:MorseSettings, setTextCallBack:any, timeEstimateCallback:any, morseViewModel:MorseViewModel) {
     MorseCookies.registerHandler(this)
@@ -273,6 +274,10 @@ export default class MorseLessonPlugin implements ICookieHandler {
   }
 
   getSettingsPresets = (forceRefresh:boolean = false, selectFirstNonYour:boolean = false) => {
+    // Bump the sequence on every invocation — synchronous paths included — so any
+    // callback from a prior async load will see a mismatched ID and self-discard.
+    const requestId = ++this.settingsPresetsRequestSeq
+
     let sps:SettingsOption[] = []
     sps.push(this.yourSettingsDummy)
     sps = sps.concat(this.customSettingsOptions)
@@ -291,7 +296,8 @@ export default class MorseLessonPlugin implements ICookieHandler {
         }
       }
     }
-    const handleData = (d) => {
+    const makeHandleData = () => (d: any) => {
+      if (requestId !== this.settingsPresetsRequestSeq) return
       // console.log(d)
       // console.log(typeof d.data.options)
       if (typeof d.data !== 'undefined' && typeof d.data.options !== 'undefined') {
@@ -323,11 +329,11 @@ export default class MorseLessonPlugin implements ICookieHandler {
       const targetLesson = letterGroupsGood ? targetClass.letterGroups.find(l => l.letterGroup === this.letterGroup()) : null
       if (targetLesson) {
         // sps.push({ display: targetLesson.setFile })
-        MorsePresetSetFileFinder.getMorsePresetSetFile(targetLesson.setFile, (data) => handleData(data))
+        MorsePresetSetFileFinder.getMorsePresetSetFile(targetLesson.setFile, makeHandleData())
       } else {
         if (targetClass && targetClass.defaultSetFile) {
           // sps.push({ display: targetClass.defaultSetFile })
-          MorsePresetSetFileFinder.getMorsePresetSetFile(targetClass.defaultSetFile, (data) => handleData(data))
+          MorsePresetSetFileFinder.getMorsePresetSetFile(targetClass.defaultSetFile, makeHandleData())
         } else {
           // no matches so use default
           this.settingsPresets(sps)
@@ -752,7 +758,14 @@ export default class MorseLessonPlugin implements ICookieHandler {
     this.setSelectedClassInitialized()
     this.setLetterGroupInitialized()
     this.setDisplaysInitialized()
-    this.ensureSettingsPresetsInitialized()
+    // Only resolve selectedPreset now if no async preset-set load was kicked off above.
+    // If a load is pending, handleData will call ensureSettingsPresetsInitialized once
+    // settingsPresets is fully populated, preventing a stale lookup against the dummy set.
+    // settingsPresetsRequestSeq is 0 until an async load is dispatched; skip
+    // the call here when one is in flight so handleData resolves it instead.
+    if (this.settingsPresetsRequestSeq === 0) {
+      this.ensureSettingsPresetsInitialized()
+    }
   }
 
   initializeWordList = () => {
