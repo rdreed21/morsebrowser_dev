@@ -29,6 +29,13 @@ export default class SpeedSettings implements ICookieHandler {
   vWpm: ko.Observable<number>
   vFwpm: ko.Observable<number>
   vm:MorseViewModel
+  speedRacer: ko.Observable<boolean>
+  speedRacerVoiceRecap: ko.Observable<boolean>
+  speedRacerStartWpm: ko.Observable<number>
+  speedRacerMultiplier: ko.Observable<number>
+  speedRacerStep: ko.Observable<number>
+  speedRacerMultiplierOptions: ko.ObservableArray<number>
+  speedRacerStepOptions: ko.ObservableArray<number>
 
   constructor (vm:MorseViewModel) {
     MorseCookies.registerHandler(this)
@@ -42,6 +49,13 @@ export default class SpeedSettings implements ICookieHandler {
     this.intervalFwpmText = ko.observable('')
     this.vWpm = ko.observable(0)
     this.vFwpm = ko.observable(0)
+    this.speedRacer = ko.observable(false)
+    this.speedRacerVoiceRecap = ko.observable(true)
+    this.speedRacerStartWpm = ko.observable(30)
+    this.speedRacerMultiplier = ko.observable(1.5)
+    this.speedRacerStep = ko.observable(3)
+    this.speedRacerMultiplierOptions = ko.observableArray([1.0, 1.25, 1.5, 1.75, 2.0])
+    this.speedRacerStepOptions = ko.observableArray([2, 3, 4, 5, 6])
 
     this.wpm = ko.pureComputed({
       read: () => {
@@ -84,9 +98,21 @@ export default class SpeedSettings implements ICookieHandler {
     this.wpm.extend({ saveCookie: 'wpm' } as ko.ObservableExtenderOptions<number>)
     this.fwpm.extend({ saveCookie: 'fwpm' } as ko.ObservableExtenderOptions<number>)
     this.syncWpm.extend({ saveCookie: 'syncWpm' } as ko.ObservableExtenderOptions<boolean>)
+    this.speedRacer.extend({ saveCookie: 'speedRacer' } as ko.ObservableExtenderOptions<boolean>)
+    this.speedRacerVoiceRecap.extend({ saveCookie: 'speedRacerVoiceRecap' } as ko.ObservableExtenderOptions<boolean>)
+    this.speedRacerStartWpm.extend({ saveCookie: 'speedRacerStartWpm' } as ko.ObservableExtenderOptions<number>)
+    this.speedRacerMultiplier.extend({ saveCookie: 'speedRacerMultiplier' } as ko.ObservableExtenderOptions<number>)
+    this.speedRacerStep.extend({ saveCookie: 'speedRacerStep' } as ko.ObservableExtenderOptions<number>)
   }
 
   getApplicableSpeed = (playingTimeInfo:PlayingTimeInfo) => {
+    if (this.speedRacer()) {
+      const start = parseInt(this.speedRacerStartWpm() as any)
+      const mult = parseFloat(this.speedRacerMultiplier() as any)
+      const idx = this.vm.cardBufferManager.getServedIndex()
+      const wpm = Math.max(1, Math.round(start / Math.pow(mult, idx)))
+      return new ApplicableSpeed(wpm, wpm)
+    }
     if (!this.speedInterval() || !this.intervalTimingsText()) {
       return new ApplicableSpeed(this.wpm(), this.fwpm())
     }
@@ -156,6 +182,31 @@ export default class SpeedSettings implements ICookieHandler {
     target = cookies.find(x => x.key === 'intervalFwpmText')
     if (target) {
       this.intervalFwpmText(target.val)
+    }
+
+    target = cookies.find(x => x.key === 'speedRacer')
+    if (target) {
+      this.speedRacer(GeneralUtils.booleanize(target.val))
+    }
+
+    target = cookies.find(x => x.key === 'speedRacerVoiceRecap')
+    if (target) {
+      this.speedRacerVoiceRecap(GeneralUtils.booleanize(target.val))
+    }
+
+    target = cookies.find(x => x.key === 'speedRacerStartWpm')
+    if (target) {
+      this.speedRacerStartWpm(parseInt(target.val))
+    }
+
+    target = cookies.find(x => x.key === 'speedRacerMultiplier')
+    if (target) {
+      this.speedRacerMultiplier(parseFloat(target.val))
+    }
+
+    target = cookies.find(x => x.key === 'speedRacerStep')
+    if (target) {
+      this.speedRacerStep(parseInt(target.val))
     }
   }
 

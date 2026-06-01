@@ -99,6 +99,7 @@ export class MorseViewModel {
   allShortcutKeys:ko.ObservableArray<ShortcutKeyEntry>
   applyEnabled:ko.Computed<boolean>
   numberOfRepeats:ko.Observable<number> = ko.observable(0)
+  speedRacerPhase:'racing' | 'speaking' | 'final' = 'racing'
   testTonePlaying:boolean = false
   testToneCount:number = 0
   testToneFlagHandle:any = 0
@@ -507,6 +508,7 @@ export class MorseViewModel {
       this.morseVoice.primeThePump()
       // clear the card buffer
       this.cardBufferManager.clear()
+      this.speedRacerPhase = 'racing'
       this.charsPlayed(0)
       // speakfirst prep
       this.morseVoice.speakFirstLastCardIndex = -1
@@ -536,12 +538,17 @@ export class MorseViewModel {
         0: play 1 time (i.e. don't repeat)
         1: play 2 times
         2: play 3 times etc.
+        Speed Racer overrides: step = exact number of plays, no additional wordspaces.
         */
-        const repeats = parseInt(this.numberOfRepeats() as any) === 0 ? 0 : parseInt(this.numberOfRepeats() as any) + 1
+        const sr = this.settings.speed.speedRacer()
+        const repeats = sr
+          ? parseInt(this.settings.speed.speedRacerStep() as any)
+          : (parseInt(this.numberOfRepeats() as any) === 0 ? 0 : parseInt(this.numberOfRepeats() as any) + 1)
+        const addlSpaces = sr ? 0 : parseInt(this.morseVoice.speakFirstAdditionalWordspaces() as any)
         const config = this.getMorseStringToWavBufferConfig(
           this.cardBufferManager.getNextMorse(
             repeats,
-            parseInt(this.morseVoice.speakFirstAdditionalWordspaces() as any)
+            addlSpaces
           )
         )
         this.addToVoiceBuffer()
@@ -554,7 +561,8 @@ export class MorseViewModel {
           }
         }
 
-        if (!this.morseVoice.speakFirst() ||
+        const bypassSpeakFirst = this.settings.speed.speedRacer()
+        if (bypassSpeakFirst || !this.morseVoice.speakFirst() ||
             (this.morseVoice.speakFirst() && (this.morseVoice.speakFirstLastCardIndex === this.currentIndex()))
         ) {
           playerCmd()
@@ -623,7 +631,7 @@ export class MorseViewModel {
     const needToTrail = this.trailReveal() && !fromVoiceOrTrail
     const speakAndTrail = needToSpeak && needToTrail
 
-    const noDelays = !needToSpeak && !needToTrail
+    const noDelays = (!needToSpeak && !needToTrail) || this.settings.speed.speedRacer()
 
     const advanceTrail = () => {
       // note we eliminate the trail delays if speaking
@@ -659,6 +667,24 @@ export class MorseViewModel {
         let cardChanged = false
         const hasMoreMorse = this.cardBufferManager.hasMoreMorse()
         if (!hasMoreMorse) {
+          // Speed Racer: intercept before advancing to next card
+          if (this.settings.speed.speedRacer()) {
+            if (this.speedRacerPhase === 'racing' && this.settings.speed.speedRacerVoiceRecap()) {
+              this.speedRacerPhase = 'speaking'
+              this.morseVoice.voiceBuffer = []
+              this.addToVoiceBuffer()
+              const phrase = this.prepPhraseToSpeakForFinal(this.getPhraseToSpeakFromBuffer())
+              this.morseVoice.speakPhrase(phrase, () => {
+                if (!this.playerPlaying()) return
+                this.speedRacerPhase = 'final'
+                this.cardBufferManager.populateBuffer(1, 0)
+                this.doPlay(true, false)
+              })
+              return
+            }
+            // 'racing' with voiceRecap off, or 'final': reset and fall through to advance
+            this.speedRacerPhase = 'racing'
+          }
           if (this.morseVoice.speakFirst()) {
             // clear the buffer
             this.morseVoice.voiceBuffer = []
@@ -680,6 +706,21 @@ export class MorseViewModel {
         }, getCardSpaceTimerHandleDelay())
       } else {
       // nothing more to play
+        // Speed Racer: run speak+recap on last card before pausing
+        if (this.settings.speed.speedRacer() && this.speedRacerPhase === 'racing' && this.settings.speed.speedRacerVoiceRecap()) {
+          this.speedRacerPhase = 'speaking'
+          this.morseVoice.voiceBuffer = []
+          this.addToVoiceBuffer()
+          const phrase = this.prepPhraseToSpeakForFinal(this.getPhraseToSpeakFromBuffer())
+          this.morseVoice.speakPhrase(phrase, () => {
+            if (!this.playerPlaying()) return
+            this.speedRacerPhase = 'final'
+            this.cardBufferManager.populateBuffer(1, 0)
+            this.doPlay(true, false)
+          })
+          return
+        }
+        this.speedRacerPhase = 'racing'
         const finalToDo = () => this.doPause(true, false, false)
         // trailing may want a linger
         if (this.trailReveal()) {

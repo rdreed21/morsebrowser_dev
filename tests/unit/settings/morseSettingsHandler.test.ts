@@ -25,7 +25,12 @@ function createMockMorseViewModel () {
         speedInterval: ko.observable(false),
         intervalTimingsText: ko.observable(''),
         intervalWpmText: ko.observable(''),
-        intervalFwpmText: ko.observable('')
+        intervalFwpmText: ko.observable(''),
+        speedRacer: ko.observable(false),
+        speedRacerVoiceRecap: ko.observable(true),
+        speedRacerStartWpm: ko.observable(30),
+        speedRacerMultiplier: ko.observable(1.5),
+        speedRacerStep: ko.observable(3)
       },
       misc: {
         newlineChunking: ko.observable(false),

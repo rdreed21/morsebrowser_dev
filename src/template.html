@@ -417,6 +417,61 @@
 
                                     </div>
 
+                                    <!--speed racer-->
+                                    <div class="input-group flex-wrap speed-racer-input-group">
+                                        <div class="col-auto">
+                                            <input type="checkbox" class="btn-check" autocomplete="off"
+                                                id="btncheckspeedracer" name="btncheckspeedracer"
+                                                aria-label="Speed Racer"
+                                                data-bind="checked: settings.speed.speedRacer"
+                                                title="Speed Racer: plays each card multiple times starting fast, stepping down in speed">
+                                            <label class="btn btn-outline-primary" for="btncheckspeedracer"
+                                                aria-hidden="true">
+                                                <img data-bind="attr:{ src: morseLoadImages().getSrc('speedometerImage')}"
+                                                    alt="">&nbsp;Speed Racer&nbsp;
+                                                <img data-bind="attr:{ src: settings.speed.speedRacer() ? morseLoadImages().getSrc('checkImage') : morseLoadImages().getSrc('circleImage')}"
+                                                    alt="" />
+                                            </label>
+                                        </div>
+
+                                        <div class="col-auto" data-bind="visible: settings.speed.speedRacer()">
+                                            <input type="checkbox" class="btn-check" autocomplete="off"
+                                                id="btncheckspeedracervoicerecap" name="btncheckspeedracervoicerecap"
+                                                aria-label="Voice + Recap"
+                                                data-bind="checked: settings.speed.speedRacerVoiceRecap"
+                                                title="After each card's racing plays, speak the answer then replay at top speed">
+                                            <label class="btn btn-outline-primary" for="btncheckspeedracervoicerecap"
+                                                aria-hidden="true">Voice + Recap&nbsp;
+                                                <img data-bind="attr:{ src: settings.speed.speedRacerVoiceRecap() ? morseLoadImages().getSrc('checkImage') : morseLoadImages().getSrc('circleImage')}"
+                                                    alt="" />
+                                            </label>
+                                        </div>
+
+                                        <label for="speedRacerStartWpm" class="input-group-text"
+                                            data-bind="visible: settings.speed.speedRacer()">Start WPM&nbsp;</label>
+                                        <input id="speedRacerStartWpm" name="speedRacerStartWpm" type="number"
+                                            class="form-control morse-settings-num"
+                                            min="1" step="1"
+                                            data-bind="textInput: settings.speed.speedRacerStartWpm, enable: settings.speed.speedRacer(), visible: settings.speed.speedRacer()"
+                                            title="Starting (fastest) WPM for Speed Racer">
+
+                                        <label for="speedRacerMultiplier" class="input-group-text"
+                                            data-bind="visible: settings.speed.speedRacer()">Multiplier&nbsp;</label>
+                                        <select id="speedRacerMultiplier" name="speedRacerMultiplier"
+                                            class="form-select"
+                                            data-bind="options: settings.speed.speedRacerMultiplierOptions, value: settings.speed.speedRacerMultiplier, enable: settings.speed.speedRacer(), visible: settings.speed.speedRacer()"
+                                            title="Speed divisor per repeat step (1.5x default)">
+                                        </select>
+
+                                        <label for="speedRacerStep" class="input-group-text"
+                                            data-bind="visible: settings.speed.speedRacer()">Steps&nbsp;</label>
+                                        <select id="speedRacerStep" name="speedRacerStep"
+                                            class="form-select"
+                                            data-bind="options: settings.speed.speedRacerStepOptions, value: settings.speed.speedRacerStep, enable: settings.speed.speedRacer(), visible: settings.speed.speedRacer()"
+                                            title="Number of times each card is played at decreasing speeds">
+                                        </select>
+                                    </div>
+
                                     <!--repeats-->
                                     <div class="input-group flex-wrap">
                                         <div class="col-md-auto">

@@ -25,6 +25,8 @@ export class CardBufferManager {
   _buffer:CardWord[] = []
   _getCurrentIndex!:()=>number
   _getWords!:()=>WordInfo[]
+  _servedIndex:number = 0
+  _realServedCount:number = 0
   constructor (getCurrentIndex:()=>number, getWords:()=>WordInfo[]) {
     this._getCurrentIndex = getCurrentIndex
     this._getWords = getWords
@@ -34,6 +36,8 @@ export class CardBufferManager {
   populateBuffer = (repeats:number = 0, additionalWordSpaces:number = 0) => {
     console.log(`populateBuffer repeats${repeats}`)
     this._buffer = []
+    this._servedIndex = 0
+    this._realServedCount = 0
     this._buffer.push(new CardWord(this._getWords()[this._getCurrentIndex()].displayWord))
     // debugger
     if (repeats > 0) {
@@ -49,6 +53,8 @@ export class CardBufferManager {
     return this._buffer.length !== 0 && this._buffer[0].subparts.length !== 0
   }
 
+  getServedIndex = ():number => this._servedIndex
+
   getNextMorse = (repeats:number = 0, additionalWordSpaces:number = 0):string => {
     // eslint-disable-next-line no-debugger
     // debugger
@@ -56,7 +62,12 @@ export class CardBufferManager {
       // return null
       this.populateBuffer(repeats, additionalWordSpaces)
     }
-    return this._buffer[0].subparts.shift().word
+    const word = this._buffer[0].subparts.shift().word
+    if (word !== '') {
+      this._servedIndex = this._realServedCount
+      this._realServedCount++
+    }
+    return word
   }
 
   getAllMorse = ():string => {
