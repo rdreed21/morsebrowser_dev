@@ -125,7 +125,7 @@ export class MorseViewModel {
     this.rawText(this.showingText())
 
     this.lessons = new MorseLessonPlugin(this.settings, (s) => { this.setText(s) }, (str) => {
-      const config = this.getMorseStringToWavBufferConfig(str)
+      const config = this.getMorseStringToWavBufferConfig(str, false, true)
       const est = this.morseWordPlayer.getTimeEstimate(config)
       return est
     }, this)
@@ -390,10 +390,12 @@ export class MorseViewModel {
     }
   }
 
-  getMorseStringToWavBufferConfig = (text, isToneTest:boolean = false) => {
+  getMorseStringToWavBufferConfig = (text, isToneTest:boolean = false, forEstimate:boolean = false) => {
     const config = new SoundMakerConfig()
     config.word = MorseStringUtils.doReplacements(text)
-    const speeds = this.settings.speed.getApplicableSpeed(this.playingTime())
+    // Lesson generation / time-estimate must use the user's base speed, NOT the
+    // transient Speed Racer speed, otherwise card counts and estimates are wrong.
+    const speeds = this.settings.speed.getApplicableSpeed(this.playingTime(), forEstimate)
     config.wpm = parseInt(speeds.wpm as any)
     config.fwpm = parseInt(speeds.fwpm as any)
     config.ditFrequency = parseInt(this.settings.frequency.ditFrequency() as any)
@@ -987,7 +989,7 @@ export class MorseViewModel {
     if (!this.rawText()) {
       return { minutes: 0, seconds: 0, normedSeconds: '00' }
     }
-    const config = this.getMorseStringToWavBufferConfig(this.words().map(w => w.displayWord).join(' '))
+    const config = this.getMorseStringToWavBufferConfig(this.words().map(w => w.displayWord).join(' '), false, true)
     const est = this.morseWordPlayer.getTimeEstimate(config)
     const minutes = Math.floor(est.timeCalcs.totalTime / 60000)
     const seconds = ((est.timeCalcs.totalTime % 60000) / 1000).toFixed(0)

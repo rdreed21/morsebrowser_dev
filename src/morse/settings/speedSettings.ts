@@ -105,8 +105,8 @@ export default class SpeedSettings implements ICookieHandler {
     this.speedRacerStep.extend({ saveCookie: 'speedRacerStep' } as ko.ObservableExtenderOptions<number>)
   }
 
-  getApplicableSpeed = (playingTimeInfo:PlayingTimeInfo) => {
-    if (this.speedRacer()) {
+  getApplicableSpeed = (playingTimeInfo:PlayingTimeInfo, ignoreSpeedRacer:boolean = false) => {
+    if (this.speedRacer() && !ignoreSpeedRacer) {
       const start = parseInt(this.speedRacerStartWpm() as any)
       const mult = parseFloat(this.speedRacerMultiplier() as any)
       const idx = this.vm.cardBufferManager ? this.vm.cardBufferManager.getServedIndex() : 0
