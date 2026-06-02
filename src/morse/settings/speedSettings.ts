@@ -37,6 +37,10 @@ export default class SpeedSettings implements ICookieHandler {
   // Whether to speak the card text via TTS before the final post-speak play.
   // When false, the final play happens immediately with no spoken word.
   speedRacerSpeakText: ko.Observable<boolean>
+  // Whether to append a final play at the base speed (first multiplier) after
+  // the variation plays. When false there is no final play and the TTS speak
+  // step is skipped along with it (TTS is tied to the final play).
+  speedRacerFinalPlay: ko.Observable<boolean>
   morseViewModel:MorseViewModel
   variableSpeedDisplay: ko.Computed<boolean>
   speedRacerPreview: ko.Computed<string>
@@ -59,6 +63,7 @@ export default class SpeedSettings implements ICookieHandler {
     this.speedRacerMultipliers = ko.observable('1.5, 1.35, 1.175, 1.0')
     this.speedRacerInterRepeatGap = ko.observable(0)
     this.speedRacerSpeakText = ko.observable(true)
+    this.speedRacerFinalPlay = ko.observable(true)
     this.vWpm = ko.observable(0)
     this.vFwpm = ko.observable(0)
 
@@ -129,6 +134,9 @@ export default class SpeedSettings implements ICookieHandler {
         return ''
       }
       const wpms = mults.map(m => Math.max(1, Math.round(target * m)))
+      if (!this.speedRacerFinalPlay()) {
+        return wpms.join(' → ') + ' wpm'
+      }
       const finalWpm = wpms[0]
       return wpms.join(' → ') + ` → speak → ${finalWpm} wpm`
     }, this)
@@ -140,6 +148,7 @@ export default class SpeedSettings implements ICookieHandler {
     this.speedRacerMultipliers.extend({ saveCookie: 'speedRacerMultipliers' } as ko.ObservableExtenderOptions<string>)
     this.speedRacerInterRepeatGap.extend({ saveCookie: 'speedRacerInterRepeatGap' } as ko.ObservableExtenderOptions<number>)
     this.speedRacerSpeakText.extend({ saveCookie: 'speedRacerSpeakText' } as ko.ObservableExtenderOptions<boolean>)
+    this.speedRacerFinalPlay.extend({ saveCookie: 'speedRacerFinalPlay' } as ko.ObservableExtenderOptions<boolean>)
   }
 
   // Restore the configurable Speed Racer fields to their constructor defaults.
@@ -149,6 +158,18 @@ export default class SpeedSettings implements ICookieHandler {
     this.speedRacerMultipliers('1.5, 1.35, 1.175, 1.0')
     this.speedRacerInterRepeatGap(0)
     this.speedRacerSpeakText(true)
+    this.speedRacerFinalPlay(true)
+  }
+
+  // Overlearn preset: ratios of 23 / 27 / 31 wpm with 23 as the base speed,
+  // ordered slow→fast so each repeat pushes the student a step faster.
+  // 23/23 = 1.0, 27/23 ≈ 1.174, 31/23 ≈ 1.348. Speak-text and the final
+  // base-speed play are both turned off — overlearn is a pure copy drill
+  // that should end at the fastest variation.
+  setOverlearnMultipliers = () => {
+    this.speedRacerMultipliers('1.0, 1.174, 1.348')
+    this.speedRacerSpeakText(false)
+    this.speedRacerFinalPlay(false)
   }
 
   // Parse the multiplier list. Drops non-finite entries; drops zeros (the
@@ -161,11 +182,12 @@ export default class SpeedSettings implements ICookieHandler {
   }
 
   // Total audible morse plays per card when Speed Racer is on:
-  // one play per non-zero multiplier, plus one final play after the TTS step.
-  // The TTS step itself is not counted (it isn't a morse play).
+  // one play per non-zero multiplier, plus (if enabled) one final play at the
+  // base speed after the TTS step. The TTS step itself is not counted.
   getRacerTotalPlays = ():number => {
     const n = SpeedSettings.parseMultipliers(this.speedRacerMultipliers()).length
-    return n > 0 ? n + 1 : 0
+    if (n <= 0) return 0
+    return this.speedRacerFinalPlay() ? n + 1 : n
   }
 
   // True iff playIndex is the final post-speak play. Caller passes the index
@@ -180,8 +202,9 @@ export default class SpeedSettings implements ICookieHandler {
    * Variation play (0..N-1) uses round(base.wpm * multipliers[playIndex]).
    * Final play (N) uses round(base.wpm * multipliers[0]) — the *first* non-
    * zero multiplier, which is the "initial" speed in the user's mental model.
-   * FWPM is taken from base (the user's main FWPM), capped at the variation
-   * WPM so we never violate fwpm <= wpm.
+   * Farnsworth is forced off during Speed Racer (fwpm = wpm) — the drill is
+   * about character speed, and extra inter-character/word spacing defeats it.
+   * The user's saved fwpm is left untouched and resumes when Racer is off.
    */
   applySpeedRacer = (base:ApplicableSpeed, playIndex:number, _total:number):ApplicableSpeed => {
     if (!this.speedRacerEnabled() || playIndex < 0) {
@@ -194,10 +217,7 @@ export default class SpeedSettings implements ICookieHandler {
     const isFinal = playIndex >= mults.length
     const multiplier = isFinal ? mults[0] : mults[playIndex]
     const variationWpm = Math.max(1, Math.round(base.wpm * multiplier))
-    let variationFwpm = base.fwpm
-    if (variationFwpm > variationWpm) {
-      variationFwpm = variationWpm
-    }
+    const variationFwpm = variationWpm
     this.vWpm(variationWpm)
     this.vFwpm(variationFwpm)
     return new ApplicableSpeed(variationWpm, variationFwpm)
@@ -294,6 +314,11 @@ export default class SpeedSettings implements ICookieHandler {
     target = cookies.find(x => x.key === 'speedRacerSpeakText')
     if (target) {
       this.speedRacerSpeakText(GeneralUtils.booleanize(target.val))
+    }
+
+    target = cookies.find(x => x.key === 'speedRacerFinalPlay')
+    if (target) {
+      this.speedRacerFinalPlay(GeneralUtils.booleanize(target.val))
     }
   }
 

@@ -78,6 +78,9 @@ export default class MorseSettingsHandler {
       new SavedSettingsInfo('speedRacerSpeakText', morseViewModel.settings.speed.speedRacerSpeakText())
     )
     savedInfos.push(
+      new SavedSettingsInfo('speedRacerFinalPlay', morseViewModel.settings.speed.speedRacerFinalPlay())
+    )
+    savedInfos.push(
       new SavedSettingsInfo('voiceBufferMaxLength', morseViewModel.morseVoice.voiceBufferMaxLength())
     )
     savedInfos.push(

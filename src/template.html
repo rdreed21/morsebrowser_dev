@@ -513,11 +513,21 @@
                                             </div>
 
                                             <div class="form-check mb-2">
+                                                <input id="speedRacerFinalPlay" name="speedRacerFinalPlay" type="checkbox"
+                                                    class="form-check-input"
+                                                    data-bind="checked: settings.speed.speedRacerFinalPlay">
+                                                <label for="speedRacerFinalPlay" class="form-check-label small"
+                                                    title="When on, after the variation plays the card is replayed once at the base speed (first multiplier). Turn off to end after the last variation. Disabling this also skips the TTS speak step.">
+                                                    Final play at base speed
+                                                </label>
+                                            </div>
+
+                                            <div class="form-check mb-2">
                                                 <input id="speedRacerSpeakText" name="speedRacerSpeakText" type="checkbox"
                                                     class="form-check-input"
-                                                    data-bind="checked: settings.speed.speedRacerSpeakText">
+                                                    data-bind="checked: settings.speed.speedRacerSpeakText, enable: settings.speed.speedRacerFinalPlay">
                                                 <label for="speedRacerSpeakText" class="form-check-label small"
-                                                    title="When on, the card text is spoken aloud before the final post-speak play. Turn off to skip the TTS step.">
+                                                    title="When on, the card text is spoken aloud before the final post-speak play. Turn off to skip the TTS step. Requires Final play at base speed.">
                                                     Speak text before final play
                                                 </label>
                                             </div>
@@ -528,6 +538,11 @@
                                                     title="Restore Multipliers, Gap, and Speak text to their defaults (1.5, 1.35, 1.175, 1.0; 0; on).">
                                                     <img data-bind="attr:{ src: morseLoadImages().getSrc('bootstrapRebootImage')}"
                                                         height="16" width="16" alt="" />&nbsp;Reset to defaults
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
+                                                    data-bind="click: ()=>settings.speed.setOverlearnMultipliers()"
+                                                    title="Set Multipliers to 1.0, 1.174, 1.348 (slow→fast, ratios of 23/27/31 wpm with 23 as base) and turn off Speak text.">
+                                                    Overlearn
                                                 </button>
                                             </div>
 
