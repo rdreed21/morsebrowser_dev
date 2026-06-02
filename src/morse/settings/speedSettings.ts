@@ -31,15 +31,11 @@ export default class SpeedSettings implements ICookieHandler {
   // WPM = round(mainWpm * multiplier). Zero entries are skipped. The post-
   // speak final play uses the *first* non-zero multiplier, not the last.
   speedRacerMultipliers: ko.Observable<string>
-  // Extra wordspace dits inserted between repeats of the same card (on top
-  // of the normal trailing wordspace). 0 keeps the existing tight pacing.
-  speedRacerInterRepeatGap: ko.Observable<number>
-  // Whether to speak the card text via TTS before the final post-speak play.
-  // When false, the final play happens immediately with no spoken word.
-  speedRacerSpeakText: ko.Observable<boolean>
-  // Whether to append a final play at the base speed (first multiplier) after
-  // the variation plays. When false there is no final play and the TTS speak
-  // step is skipped along with it (TTS is tied to the final play).
+  // Whether to append a final play (replay) at the base speed (first
+  // multiplier) after the variation plays. When false there is no replay and
+  // the TTS speak step is skipped along with it (speech is tied to the replay).
+  // Whether speech actually happens on that replay is controlled by the Voice
+  // toggle in the Voice section.
   speedRacerFinalPlay: ko.Observable<boolean>
   morseViewModel:MorseViewModel
   variableSpeedDisplay: ko.Computed<boolean>
@@ -61,8 +57,6 @@ export default class SpeedSettings implements ICookieHandler {
     this.intervalFwpmText = ko.observable('')
     this.speedRacerEnabled = ko.observable(false)
     this.speedRacerMultipliers = ko.observable('1.5, 1.35, 1.175, 1.0')
-    this.speedRacerInterRepeatGap = ko.observable(0)
-    this.speedRacerSpeakText = ko.observable(true)
     this.speedRacerFinalPlay = ko.observable(true)
     this.vWpm = ko.observable(0)
     this.vFwpm = ko.observable(0)
@@ -138,7 +132,10 @@ export default class SpeedSettings implements ICookieHandler {
         return wpms.join(' → ') + ' wpm'
       }
       const finalWpm = wpms[0]
-      return wpms.join(' → ') + ` → speak → ${finalWpm} wpm`
+      // The spoken step only happens when Voice is on; the replay always does.
+      const voiceOn = !!(this.vm && this.vm.morseVoice && this.vm.morseVoice.voiceEnabled())
+      const speakStep = voiceOn ? ' → speak' : ''
+      return wpms.join(' → ') + `${speakStep} → ${finalWpm} wpm`
     }, this)
 
     this.wpm.extend({ saveCookie: 'wpm' } as ko.ObservableExtenderOptions<number>)
@@ -146,8 +143,6 @@ export default class SpeedSettings implements ICookieHandler {
     this.syncWpm.extend({ saveCookie: 'syncWpm' } as ko.ObservableExtenderOptions<boolean>)
     this.speedRacerEnabled.extend({ saveCookie: 'speedRacerEnabled' } as ko.ObservableExtenderOptions<boolean>)
     this.speedRacerMultipliers.extend({ saveCookie: 'speedRacerMultipliers' } as ko.ObservableExtenderOptions<string>)
-    this.speedRacerInterRepeatGap.extend({ saveCookie: 'speedRacerInterRepeatGap' } as ko.ObservableExtenderOptions<number>)
-    this.speedRacerSpeakText.extend({ saveCookie: 'speedRacerSpeakText' } as ko.ObservableExtenderOptions<boolean>)
     this.speedRacerFinalPlay.extend({ saveCookie: 'speedRacerFinalPlay' } as ko.ObservableExtenderOptions<boolean>)
   }
 
@@ -156,19 +151,16 @@ export default class SpeedSettings implements ICookieHandler {
   // panel doesn't disable the feature out from under the user.
   resetSpeedRacerDefaults = () => {
     this.speedRacerMultipliers('1.5, 1.35, 1.175, 1.0')
-    this.speedRacerInterRepeatGap(0)
-    this.speedRacerSpeakText(true)
     this.speedRacerFinalPlay(true)
   }
 
   // Overlearn preset: ratios of 23 / 27 / 31 wpm with 23 as the base speed,
   // ordered slow→fast so each repeat pushes the student a step faster.
-  // 23/23 = 1.0, 27/23 ≈ 1.174, 31/23 ≈ 1.348. Speak-text and the final
-  // base-speed play are both turned off — overlearn is a pure copy drill
-  // that should end at the fastest variation.
+  // 23/23 = 1.0, 27/23 ≈ 1.174, 31/23 ≈ 1.348. The final base-speed replay is
+  // turned off — overlearn is a pure copy drill that should end at the fastest
+  // variation (turning the replay off also skips the spoken step).
   setOverlearnMultipliers = () => {
     this.speedRacerMultipliers('1.0, 1.174, 1.348')
-    this.speedRacerSpeakText(false)
     this.speedRacerFinalPlay(false)
   }
 
@@ -303,17 +295,6 @@ export default class SpeedSettings implements ICookieHandler {
     target = cookies.find(x => x.key === 'speedRacerMultipliers')
     if (target) {
       this.speedRacerMultipliers(target.val)
-    }
-
-    target = cookies.find(x => x.key === 'speedRacerInterRepeatGap')
-    if (target) {
-      const n = parseInt(target.val)
-      if (Number.isFinite(n) && n >= 0) this.speedRacerInterRepeatGap(n)
-    }
-
-    target = cookies.find(x => x.key === 'speedRacerSpeakText')
-    if (target) {
-      this.speedRacerSpeakText(GeneralUtils.booleanize(target.val))
     }
 
     target = cookies.find(x => x.key === 'speedRacerFinalPlay')

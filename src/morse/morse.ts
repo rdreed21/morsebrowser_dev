@@ -389,7 +389,7 @@ export class MorseViewModel {
     }
   }
 
-  getMorseStringToWavBufferConfig = (text, isToneTest:boolean = false, applySpeedRacer:boolean = false) => {
+  getMorseStringToWavBufferConfig = (text, isToneTest:boolean = false, applySpeedRacer:boolean = false, interRepeatDits:number = 0) => {
     const config = new SoundMakerConfig()
     config.word = MorseStringUtils.doReplacements(text)
     let speeds = this.settings.speed.getApplicableSpeed(this.playingTime())
@@ -413,6 +413,12 @@ export class MorseViewModel {
     }
     // note this was changed so UI is min 1 meaning 0, 1=>7, 2=>14 etc
     config.xtraWordSpaceDits = (parseInt(this.xtraWordSpaceDits() as any) - 1) * 7
+    // Fractional Repeat Spacing (e.g. 0.25 wordspace) is rendered as extra
+    // trailing wordspace dits on audible plays. Empty word-gap plays already
+    // carry the whole-wordspace part, so skip them here.
+    if (interRepeatDits > 0 && config.word && config.word.trim().length > 0) {
+      config.xtraWordSpaceDits += interRepeatDits
+    }
     config.volume = parseInt(this.volume() as any)
     config.noise = new NoiseConfig()
     config.noise.type = this.noiseEnabled() ? this.noiseType() : 'off'
@@ -546,21 +552,26 @@ export class MorseViewModel {
         1: play 2 times
         2: play 3 times etc.
         */
-        // Speed Racer owns the per-card play count and the inter-repeat gap
-        // when enabled. It uses (variation count + 1) plays — the +1 is the
-        // post-speak final play.
+        // Speed Racer owns the per-card play count when enabled. It uses
+        // (variation count + 1) plays — the +1 is the base-speed replay.
         const racerOn = this.settings.speed.speedRacerEnabled()
         const racerTotalPlays = racerOn ? this.settings.speed.getRacerTotalPlays() : 0
         const repeats = racerTotalPlays > 1
           ? racerTotalPlays
           : (parseInt(this.numberOfRepeats() as any) === 0 ? 0 : parseInt(this.numberOfRepeats() as any) + 1)
-        const additionalWordSpaces = racerTotalPlays > 1
-          ? Math.max(0, parseInt(this.settings.speed.speedRacerInterRepeatGap() as any) || 0)
-          : parseInt(this.morseVoice.speakFirstAdditionalWordspaces() as any)
+        // The "Repeat Spacing" box (in wordspaces) controls the gap between
+        // repeats for both normal repeats and Speed Racer. It supports 0.25
+        // steps: the whole part is rendered as silent word-gap plays and the
+        // fractional part as extra trailing wordspace dits (1 wordspace = 7
+        // dits) on the audible plays.
+        const repeatSpacing = Math.max(0, parseFloat(this.morseVoice.speakFirstAdditionalWordspaces() as any) || 0)
+        const wholeWordSpaces = Math.floor(repeatSpacing)
+        const fractionalWordSpaceDits = repeats > 0 ? (repeatSpacing - wholeWordSpaces) * 7 : 0
         const config = this.getMorseStringToWavBufferConfig(
-          this.cardBufferManager.getNextMorse(repeats, additionalWordSpaces),
+          this.cardBufferManager.getNextMorse(repeats, wholeWordSpaces),
           false,
-          true
+          true,
+          fractionalWordSpaceDits
         )
         this.addToVoiceBuffer()
         const playerCmd = () => {
@@ -572,11 +583,15 @@ export class MorseViewModel {
           }
         }
 
-        // Speed Racer: speak the word right before the final post-speak play.
+        // Speed Racer: speak the word right before the base-speed replay.
+        // Speech is tied to the replay (Replay Base Speed) and gated by the
+        // Voice toggle — it speaks only when both are on. With Voice off the
+        // replay still happens, just silently.
         const racerState = this.cardBufferManager.getRepeatState()
         const isSpeedRacerFinalPlay = racerOn &&
+          this.settings.speed.speedRacerFinalPlay() &&
           this.settings.speed.isRacerFinalPlay(racerState.index) &&
-          this.settings.speed.speedRacerSpeakText() &&
+          this.morseVoice.voiceEnabled() &&
           config.word && config.word.trim().length > 0
 
         if (isSpeedRacerFinalPlay) {
