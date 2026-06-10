@@ -1,0 +1,2 @@
+# Word list files are parsed by splitting on \n; keep them LF everywhere.
+src/wordfiles/** text eol=lf
