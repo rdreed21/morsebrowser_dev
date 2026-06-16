@@ -33,6 +33,10 @@ export interface ShortcutKeyEntry {
 }
 
 export class MorseViewModel {
+  // Default gap (in wordspaces) inserted between Speed Racer repeats when the
+  // user hasn't set their own Repeat Spacing. Keeps racing repeats audibly
+  // distinct instead of jammed together.
+  static readonly RACER_DEFAULT_REPEAT_SPACING = 1
   accessibilityAnnouncement:ko.Observable<string> = ko.observable('')
   textBuffer:ko.Observable<string> = ko.observable('')
   hideList:ko.Observable<boolean> = ko.observable(true)
@@ -564,7 +568,14 @@ export class MorseViewModel {
         // steps: the whole part is rendered as silent word-gap plays and the
         // fractional part as extra trailing wordspace dits (1 wordspace = 7
         // dits) on the audible plays.
-        const repeatSpacing = Math.max(0, parseFloat(this.morseVoice.speakFirstAdditionalWordspaces() as any) || 0)
+        const userRepeatSpacing = Math.max(0, parseFloat(this.morseVoice.speakFirstAdditionalWordspaces() as any) || 0)
+        // Speed Racer jams its repeats together with no gap by default, which
+        // testers found too fast to follow. When racing and the user hasn't set
+        // their own Repeat Spacing, fall back to a one-wordspace gap so each
+        // repeat is distinct. An explicit non-zero value always wins.
+        const repeatSpacing = (racerOn && userRepeatSpacing === 0)
+          ? MorseViewModel.RACER_DEFAULT_REPEAT_SPACING
+          : userRepeatSpacing
         const wholeWordSpaces = Math.floor(repeatSpacing)
         const fractionalWordSpaceDits = repeats > 0 ? (repeatSpacing - wholeWordSpaces) * 7 : 0
         const config = this.getMorseStringToWavBufferConfig(
