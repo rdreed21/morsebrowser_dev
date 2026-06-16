@@ -402,7 +402,7 @@ export class MorseViewModel {
     // estimates and wav downloads must use the unmodified target speed.
     if (applySpeedRacer && this.settings.speed.speedRacerEnabled() && config.word && config.word.trim().length > 0) {
       const { index, total } = this.cardBufferManager.getRepeatState()
-      if (total > 1 && index >= 0) {
+      if (total >= 1 && index >= 0) {
         speeds = this.settings.speed.applySpeedRacer(speeds, index, total)
       }
     }
@@ -557,10 +557,12 @@ export class MorseViewModel {
         2: play 3 times etc.
         */
         // Speed Racer owns the per-card play count when enabled. It uses
-        // (variation count + 1) plays — the +1 is the base-speed replay.
+        // (variation count + 1) plays — the +1 is the base-speed replay. A
+        // single variation with the replay off still counts as racing (1 play),
+        // so route any positive racer play count through the racer path.
         const racerOn = this.settings.speed.speedRacerEnabled()
         const racerTotalPlays = racerOn ? this.settings.speed.getRacerTotalPlays() : 0
-        const repeats = racerTotalPlays > 1
+        const repeats = racerTotalPlays >= 1
           ? racerTotalPlays
           : (parseInt(this.numberOfRepeats() as any) === 0 ? 0 : parseInt(this.numberOfRepeats() as any) + 1)
         // The "Repeat Spacing" box (in wordspaces) controls the gap between

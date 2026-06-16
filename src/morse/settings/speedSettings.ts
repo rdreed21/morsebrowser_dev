@@ -136,7 +136,12 @@ export default class SpeedSettings implements ICookieHandler {
       const voiceOn = !!(this.vm && this.vm.morseVoice && this.vm.morseVoice.voiceEnabled())
       const speakStep = voiceOn ? ' → speak' : ''
       return wpms.join(' → ') + `${speakStep} → ${finalWpm} wpm`
-    }, this)
+    // deferEvaluation: morseVoice is assigned after this computed is created, so
+    // an eager first eval would read voiceEnabled() off an undefined morseVoice,
+    // short-circuit, and never subscribe to it — leaving the " → speak" hint
+    // stale when Voice is toggled. Deferring to first bind-time read (after the
+    // VM is fully constructed) lets the voiceEnabled dependency register.
+    }, this, { deferEvaluation: true })
 
     this.wpm.extend({ saveCookie: 'wpm' } as ko.ObservableExtenderOptions<number>)
     this.fwpm.extend({ saveCookie: 'fwpm' } as ko.ObservableExtenderOptions<number>)
@@ -185,6 +190,9 @@ export default class SpeedSettings implements ICookieHandler {
   // True iff playIndex is the final post-speak play. Caller passes the index
   // emitted by the buffer.
   isRacerFinalPlay = (playIndex:number):boolean => {
+    if (!this.speedRacerFinalPlay()) {
+      return false
+    }
     const total = this.getRacerTotalPlays()
     return total > 1 && playIndex === total - 1
   }
