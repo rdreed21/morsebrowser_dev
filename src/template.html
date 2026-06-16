@@ -436,7 +436,8 @@
                                                 <input id="speakFirstAdditionalWordspaces"
                                                     name="speakFirstAdditionalWordspaces" type="number"
                                                     class="form-control morse-settings-num"
-                                                    min="0" max="10" step="1"
+                                                    min="0" max="10" step="0.25"
+                                                    title="Extra spacing between repeats, in wordspaces. Adjustable in 0.25 steps. Also controls the gap between Speed Racer repeats."
                                                     data-bind="textInput: morseVoice.speakFirstAdditionalWordspaces">
                                             </div>
                                         </div>
@@ -500,61 +501,28 @@
                                                 </span>
                                             </div>
 
-                                            <div class="input-group input-group-sm mb-2">
-                                                <label for="speedRacerInterRepeatGap" class="input-group-text"
-                                                    title="Extra wordspaces inserted between repeats of the same card. 0 keeps the existing tight pacing. Increase to slow down the sequence within a card.">
-                                                    Gap between repeats (wordspaces)
-                                                </label>
-                                                <input id="speedRacerInterRepeatGap" name="speedRacerInterRepeatGap" type="number"
-                                                    style="max-width:80px;" class="form-control"
-                                                    min="0" max="20" step="1"
-                                                    data-bind="textInput: settings.speed.speedRacerInterRepeatGap"
-                                                    title="Extra wordspaces between each play of the same card.">
-                                            </div>
-
                                             <div class="form-check mb-2">
                                                 <input id="speedRacerFinalPlay" name="speedRacerFinalPlay" type="checkbox"
                                                     class="form-check-input"
                                                     data-bind="checked: settings.speed.speedRacerFinalPlay">
                                                 <label for="speedRacerFinalPlay" class="form-check-label small"
-                                                    title="When on, after the variation plays the card is replayed once at the base speed (first multiplier). Turn off to end after the last variation. Disabling this also skips the TTS speak step.">
-                                                    Final play at base speed
-                                                </label>
-                                            </div>
-
-                                            <div class="form-check mb-2">
-                                                <input id="speedRacerSpeakText" name="speedRacerSpeakText" type="checkbox"
-                                                    class="form-check-input"
-                                                    data-bind="checked: settings.speed.speedRacerSpeakText, enable: settings.speed.speedRacerFinalPlay">
-                                                <label for="speedRacerSpeakText" class="form-check-label small"
-                                                    title="When on, the card text is spoken aloud before the final post-speak play. Turn off to skip the TTS step. Requires Final play at base speed.">
-                                                    Speak text before final play
+                                                    title="When on, after the variation plays the card is replayed once at the base speed (first multiplier). Turn off to end after the last variation. When Voice is on, the word is spoken just before this replay.">
+                                                    Replay Base Speed
                                                 </label>
                                             </div>
 
                                             <div class="mb-2">
                                                 <button type="button" class="btn btn-sm btn-outline-secondary"
                                                     data-bind="click: ()=>settings.speed.resetSpeedRacerDefaults()"
-                                                    title="Restore Multipliers, Gap, and Speak text to their defaults (1.5, 1.35, 1.175, 1.0; 0; on).">
+                                                    title="Restore Multipliers and Replay Base Speed to their defaults (1.5, 1.35, 1.175, 1.0; on).">
                                                     <img data-bind="attr:{ src: morseLoadImages().getSrc('bootstrapRebootImage')}"
                                                         height="16" width="16" alt="" />&nbsp;Reset to defaults
                                                 </button>
                                                 <button type="button" class="btn btn-sm btn-outline-secondary ms-2"
                                                     data-bind="click: ()=>settings.speed.setOverlearnMultipliers()"
-                                                    title="Set Multipliers to 1.0, 1.174, 1.348 (slow→fast, ratios of 23/27/31 wpm with 23 as base) and turn off Speak text.">
+                                                    title="Set Multipliers to 1.0, 1.174, 1.348 (slow→fast, ratios of 23/27/31 wpm with 23 as base) and turn off Replay Base Speed.">
                                                     Overlearn
                                                 </button>
-                                            </div>
-
-                                            <div class="small text-muted">
-                                                <strong>Other timing:</strong>
-                                                set time between cards with <a href="#cardSpace">CARD WAIT</a> above.
-                                                Pause before TTS speaks the word with <em>thinking time</em> in the Voice section.
-                                                <br>
-                                                <strong>Voice / spelling:</strong>
-                                                Speed Racer uses your existing Voice settings.
-                                                If <em>Voice</em> is on with <em>Spell</em> enabled the word is spelled letter-by-letter; otherwise it is spoken naturally.
-                                                You don't need to enable <em>Speak first</em> &mdash; Speed Racer triggers TTS itself before the final play.
                                             </div>
                                         </div>
                                     </div>

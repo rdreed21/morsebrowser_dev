@@ -72,12 +72,6 @@ export default class MorseSettingsHandler {
       new SavedSettingsInfo('speedRacerMultipliers', morseViewModel.settings.speed.speedRacerMultipliers())
     )
     savedInfos.push(
-      new SavedSettingsInfo('speedRacerInterRepeatGap', morseViewModel.settings.speed.speedRacerInterRepeatGap())
-    )
-    savedInfos.push(
-      new SavedSettingsInfo('speedRacerSpeakText', morseViewModel.settings.speed.speedRacerSpeakText())
-    )
-    savedInfos.push(
       new SavedSettingsInfo('speedRacerFinalPlay', morseViewModel.settings.speed.speedRacerFinalPlay())
     )
     savedInfos.push(
