@@ -29,13 +29,14 @@ export default class SpeedSettings implements ICookieHandler {
   // Comma-separated list of multipliers applied to the user's main WPM
   // (top of page). Each non-zero entry produces one variation play whose
   // WPM = round(mainWpm * multiplier). Zero entries are skipped. The post-
-  // speak final play uses the *first* non-zero multiplier, not the last.
+  // speak final play uses a 1.0 multiplier (main WPM), not mults[0].
   speedRacerMultipliers: ko.Observable<string>
-  // Whether to append a final play (replay) at the base speed (first
-  // multiplier) after the variation plays.
+  // Whether to append a final play (replay) at main WPM (1.0 multiplier)
+  // after the variation plays.
   speedRacerFinalPlay: ko.Observable<boolean>
   // When Replay Base Speed is on, speak the card once before that replay.
-  // Enabling this turns Voice on and opens Voice Options for configuration.
+  // Clicking this on enables Voice and opens Voice Options for Spell,
+  // delays, speaker, etc. Recap runs when this and Voice are both on.
   speedRacerSpeakBeforeReplay: ko.Observable<boolean>
   // Preset/cookie compat only — FWPM always stays at saved base during racing.
   speedRacerKeepFwpm: ko.Observable<boolean>
@@ -122,7 +123,7 @@ export default class SpeedSettings implements ICookieHandler {
     }, this)
 
     // Live preview of the per-card sequence, e.g.
-    // "30 → 27 → 24 → 20 → speak → 30 wpm" or "30 → 27 → speak".
+    // "30 → 27 → 24 → 20 → speak → 20 wpm" or "30 → 27 → speak".
     this.speedRacerPreview = ko.computed(() => {
       if (!this.speedRacerEnabled()) {
         return ''
@@ -137,7 +138,7 @@ export default class SpeedSettings implements ICookieHandler {
       if (!this.speedRacerFinalPlay()) {
         return wpms.join(' → ') + speakStep + (speakStep ? '' : ' wpm')
       }
-      const finalWpm = wpms[0]
+      const finalWpm = SpeedSettings.replayWpm(target)
       return wpms.join(' → ') + `${speakStep} → ${finalWpm} wpm`
     }, this)
 
@@ -173,6 +174,13 @@ export default class SpeedSettings implements ICookieHandler {
     this.speedRacerMultipliers('1.0, 1.174, 1.348')
     this.speedRacerFinalPlay(false)
     this.speedRacerSpeakBeforeReplay(false)
+  }
+
+  // Multiplier for the optional post-speak replay: main character speed (1.0×).
+  static readonly REPLAY_MULTIPLIER = 1.0
+
+  static replayWpm = (baseWpm:number):number => {
+    return Math.max(1, Math.round(baseWpm * SpeedSettings.REPLAY_MULTIPLIER))
   }
 
   // Parse the multiplier list. Drops non-finite entries; drops zeros (the
@@ -223,8 +231,7 @@ export default class SpeedSettings implements ICookieHandler {
   /**
    * Apply Speed Racer to a base ApplicableSpeed for the given play slot.
    * Variation play (0..N-1) uses round(base.wpm * multipliers[playIndex]).
-   * Final play (N) uses round(base.wpm * multipliers[0]) — the *first* non-
-   * zero multiplier, which is the "initial" speed in the user's mental model.
+   * Final play (N) uses round(base.wpm * 1.0) — main WPM ("Replay Base Speed").
    * FWPM stays at the saved base when the variation is faster (Farnsworth);
    * when variation WPM drops below base FWPM, spacing scales down with it so
    * slow ladder steps stay cohesive (same rule morse-pro uses internally).
@@ -238,7 +245,7 @@ export default class SpeedSettings implements ICookieHandler {
       return base
     }
     const isFinal = playIndex >= mults.length
-    const multiplier = isFinal ? mults[0] : mults[playIndex]
+    const multiplier = isFinal ? SpeedSettings.REPLAY_MULTIPLIER : mults[playIndex]
     const variationWpm = Math.max(1, Math.round(base.wpm * multiplier))
     const variationFwpm = Math.min(base.fwpm, variationWpm)
     this.vWpm(variationWpm)

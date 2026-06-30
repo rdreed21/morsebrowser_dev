@@ -590,6 +590,26 @@ export class MorseViewModel {
     })
   }
 
+  expandVoiceOptionsAccordion = () => {
+    const panel = document.getElementById('collapsevoiceoptions')
+    const button = document.getElementById('voiceOptionsAccordionButton')
+    if (!panel || !button) {
+      return
+    }
+    panel.classList.add('show')
+    button.classList.remove('collapsed')
+    button.setAttribute('aria-expanded', 'true')
+  }
+
+  onSpeedRacerSpeakBeforeReplayClick = (_data, event:Event) => {
+    const input = event.target as HTMLInputElement
+    if (input?.checked) {
+      this.morseVoice.voiceEnabled(true)
+      this.expandVoiceOptionsAccordion()
+    }
+    return true
+  }
+
   scrollPlaybackIntoView = () => {
     document.querySelector('.playback-controls')?.scrollIntoView({ block: 'start', behavior: 'auto' })
   }
@@ -722,7 +742,9 @@ export class MorseViewModel {
         const racerState = this.cardBufferManager.getRepeatState()
         const playIndex = racerState.index
         const audiblePlay = !!(config.word && config.word.trim().length > 0)
-        const speakOn = racerOn && this.settings.speed.speedRacerSpeakBeforeReplay()
+        const speakOn = racerOn &&
+          this.settings.speed.speedRacerSpeakBeforeReplay() &&
+          this.morseVoice.voiceEnabled()
 
         const playerCmd = () => {
           if (!this.morseVoice.speakFirst() || this.playerPlaying()) {

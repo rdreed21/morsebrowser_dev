@@ -42,6 +42,36 @@ describe('collapseSettingsAccordions', () => {
   })
 })
 
+function expandVoiceOptionsAccordion () {
+  const panel = document.getElementById('collapsevoiceoptions')
+  const button = document.getElementById('voiceOptionsAccordionButton')
+  if (!panel || !button) {
+    return
+  }
+  panel.classList.add('show')
+  button.classList.remove('collapsed')
+  button.setAttribute('aria-expanded', 'true')
+}
+
+describe('expandVoiceOptionsAccordion', () => {
+  beforeEach(() => {
+    document.body.innerHTML = `
+      <div id="accordionArea">
+        <div class="accordion-collapse collapse" id="collapsevoiceoptions"></div>
+        <button id="voiceOptionsAccordionButton" class="accordion-button collapsed" aria-expanded="false">Voice</button>
+      </div>
+    `
+  })
+
+  it('expands the Voice Options panel and button', () => {
+    expandVoiceOptionsAccordion()
+    expect(document.querySelector('#collapsevoiceoptions')?.classList.contains('show')).toBe(true)
+    const button = document.getElementById('voiceOptionsAccordionButton')
+    expect(button?.classList.contains('collapsed')).toBe(false)
+    expect(button?.getAttribute('aria-expanded')).toBe('true')
+  })
+})
+
 describe('scrollPlaybackIntoView', () => {
   it('scrolls the playback controls into view', () => {
     const el = document.createElement('section')

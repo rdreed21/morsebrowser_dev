@@ -133,7 +133,7 @@ describe('SpeedSettings.applySpeedRacer WPM slots', () => {
     expect(s.applySpeedRacer(base, 2, 3).fwpm).toBe(15)
   })
 
-  it('maps Jay-style ladder plus base-speed replay at first multiplier', () => {
+  it('maps Jay-style ladder plus base-speed replay at main WPM (1.0×)', () => {
     s.speedRacerMultipliers('1.5, 1.35, 1.175, 1.0')
     s.speedRacerFinalPlay(true)
     const base = new ApplicableSpeed(20, 12)
@@ -141,7 +141,7 @@ describe('SpeedSettings.applySpeedRacer WPM slots', () => {
     expect(s.applySpeedRacer(base, 1, 5).wpm).toBe(27)
     expect(s.applySpeedRacer(base, 2, 5).wpm).toBe(24)
     expect(s.applySpeedRacer(base, 3, 5).wpm).toBe(20)
-    expect(s.applySpeedRacer(base, 4, 5).wpm).toBe(30) // replay uses mults[0]
+    expect(s.applySpeedRacer(base, 4, 5).wpm).toBe(20) // replay at 1.0×
   })
 
   it('maps descending multipliers including fractions below 1.0', () => {
@@ -155,10 +155,10 @@ describe('SpeedSettings.applySpeedRacer WPM slots', () => {
     expect(s.applySpeedRacer(base, 2, 5).wpm).toBe(10)
     expect(s.applySpeedRacer(base, 3, 5).wpm).toBe(5)
     expect(s.applySpeedRacer(base, 3, 5).fwpm).toBe(5) // spacing scales with slow WPM
-    expect(s.applySpeedRacer(base, 4, 5).wpm).toBe(30) // replay at first multiplier
-    expect(s.speedRacerPreview()).toBe('30 → 20 → 10 → 5 → speak → 30 wpm')
+    expect(s.applySpeedRacer(base, 4, 5).wpm).toBe(20) // replay at main WPM (1.0×)
+    expect(s.speedRacerPreview()).toBe('30 → 20 → 10 → 5 → speak → 20 wpm')
     s.speedRacerSpeakBeforeReplay(false)
-    expect(s.speedRacerPreview()).toBe('30 → 20 → 10 → 5 → 30 wpm')
+    expect(s.speedRacerPreview()).toBe('30 → 20 → 10 → 5 → 20 wpm')
     expect(s.getSpeedRacerPreSpeakPadMs()).toBeGreaterThanOrEqual(350)
   })
 })
@@ -180,8 +180,8 @@ describe('SpeedSettings.applySpeedRacer', () => {
     expect(s.applySpeedRacer(base, 3, 5).wpm).toBe(20) // 20 * 1.0
   })
 
-  it('uses the first multiplier for the final/replay index (>= multiplier count)', () => {
-    expect(s.applySpeedRacer(base, 4, 5).wpm).toBe(30) // mults[0] = 1.5
+  it('uses main WPM (1.0×) for the final/replay index (>= multiplier count)', () => {
+    expect(s.applySpeedRacer(base, 4, 5).wpm).toBe(20) // 1.0× replay
   })
 
   it('keeps base FWPM for fast variations (Farnsworth) but scales down for slow ones', () => {
@@ -200,9 +200,9 @@ describe('SpeedSettings.applySpeedRacer', () => {
     s.trueWpm(20)
     s.speedRacerFinalPlay(true)
     s.speedRacerSpeakBeforeReplay(false)
-    expect(s.speedRacerPreview()).toBe('30 → 20 → 30 wpm')
+    expect(s.speedRacerPreview()).toBe('30 → 20 → 20 wpm')
     s.speedRacerSpeakBeforeReplay(true)
-    expect(s.speedRacerPreview()).toBe('30 → 20 → speak → 30 wpm')
+    expect(s.speedRacerPreview()).toBe('30 → 20 → speak → 20 wpm')
   })
 
   it('preview shows speak after variations when replay is off', () => {
