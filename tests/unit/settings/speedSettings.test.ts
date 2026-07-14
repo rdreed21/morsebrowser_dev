@@ -261,3 +261,39 @@ describe('SpeedSettings.applySpeedRacer', () => {
     expect(s.applySpeedRacer(base, 0, 5)).toBe(base)
   })
 })
+
+describe('SpeedSettings.variableSpeedDisplay', () => {
+  it('shows live WPM during Speed Racer playback (not only Speed Intervals)', () => {
+    const playerPlaying = ko.observable(false)
+    const vm = {
+      playerPlaying,
+      morseVoice: { voiceEnabled: ko.observable(false) }
+    } as unknown as MorseViewModel
+    const s = new SpeedSettings(vm)
+
+    s.speedRacerEnabled(true)
+    expect(s.variableSpeedDisplay()).toBe(false)
+
+    playerPlaying(true)
+    expect(s.variableSpeedDisplay()).toBe(true)
+
+    s.speedRacerEnabled(false)
+    expect(s.variableSpeedDisplay()).toBe(false)
+
+    s.speedInterval(true)
+    s.intervalTimingsText('10,20')
+    expect(s.variableSpeedDisplay()).toBe(true)
+
+    playerPlaying(false)
+    expect(s.variableSpeedDisplay()).toBe(false)
+  })
+
+  it('updates vWpm when applySpeedRacer runs so the live display has a value', () => {
+    const s = createSpeedSettings()
+    s.speedRacerEnabled(true)
+    s.speedRacerMultipliers('1.348, 1.174, 1.0')
+    const applied = s.applySpeedRacer(new ApplicableSpeed(23, 23), 0, 3)
+    expect(applied.wpm).toBe(31)
+    expect(s.vWpm()).toBe(31)
+  })
+})

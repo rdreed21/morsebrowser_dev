@@ -85,6 +85,7 @@
                     <input id="wpm" name="wpm" type="number" class="form-control morse-settings-num" min="1"
                         data-bind="textInput: settings.speed.wpm, hidden: settings.speed.variableSpeedDisplay">
                     <input type="number" class="form-control morse-settings-num"
+                        aria-label="Playing WPM"
                         data-bind="textInput: settings.speed.vWpm, visible: settings.speed.variableSpeedDisplay, enable: false">
                     <!-- fwpm -->
                     <span class="input-group-text"><label

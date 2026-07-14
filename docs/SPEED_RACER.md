@@ -34,6 +34,8 @@ For each card:
 
 **FWPM during racing:** When a variation is faster than your saved FWPM, spacing stays at the saved base (Farnsworth). When variation WPM drops below saved FWPM (slow multipliers), spacing scales down with character speed so slow ladder steps stay cohesive.
 
+**Live speed display:** While Speed Racer is playing, the top **Character Speed** / **Effective Speed** boxes switch to a read-only live readout (`vWpm` / `vFwpm`) that steps with each variation — the same pattern Speed Intervals already used. When playback stops, the editable base WPM/FWPM fields return.
+
 **Mutual exclusion:** Speed Racer and **Speed Intervals** cannot both be on; enabling one turns the other off.
 
 **Voice / Speak Before Replay:** **Speak is the sole speech gate during Speed Racer.** Recap speech uses Voice Options settings (Spell, pre/post delay, speaker, etc.) via `speakSpeedRacerRecap` when **Speak** and **Voice** are both on. SR + Speak off = morse-only (no recap, no voice trail). Turning Speak off while SR is on forces Voice off and clears the voice buffer. Clicking **Speed Racer** on or toggling **Speak** opens **Voice Options** if collapsed (lesson/preset changes do not). Enable **Voice** yourself when using Speak. **Arm Recap** presets (e.g. BC1 Default 12/8) lock the Voice toggle during normal lessons; enabling **Speed Racer + Speak** unlocks Voice and switches to automatic recap.

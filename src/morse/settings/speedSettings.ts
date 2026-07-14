@@ -114,8 +114,18 @@ export default class SpeedSettings implements ICookieHandler {
       owner: this
     })
 
+    // Show live WPM/FWPM while Speed Intervals or Speed Racer is actively
+    // driving per-play speeds. applySpeedRacer / getApplicableSpeed write
+    // vWpm/vFwpm; without this, the top Character Speed box stays stuck on
+    // the saved base WPM and racing looks like it "isn't changing speeds".
     this.variableSpeedDisplay = ko.computed(() => {
-      return (this.speedInterval() && this.intervalTimingsText() && vm.playerPlaying())
+      if (!vm.playerPlaying()) {
+        return false
+      }
+      if (this.speedRacerEnabled()) {
+        return true
+      }
+      return !!(this.speedInterval() && this.intervalTimingsText())
     }, this)
 
     // Variation count = number of non-zero multipliers.
