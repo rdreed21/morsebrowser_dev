@@ -43,12 +43,14 @@ export class CardBufferManager {
     const cardWord = new CardWord(this._getWords()[this._getCurrentIndex()].displayWord)
     this._buffer.push(cardWord)
     if (repeats > 0) {
-      const audibleSubparts = cardWord.subparts.map((sp) => sp.word)
+      // One audible unit per repeat/Speed Racer step: the whole card text.
+      // Keep Lines stores a multi-word sentence as a single card; splitting on
+      // spaces made SR advance multipliers word-by-word inside the phrase
+      // instead of treating the sentence as one entity per ladder step.
+      const fullCard = cardWord.original
       cardWord.subparts = []
       for (let r = 0; r < repeats; r++) {
-        audibleSubparts.forEach((word) => {
-          cardWord.subparts.push(new CardWordSubPart(word))
-        })
+        cardWord.subparts.push(new CardWordSubPart(fullCard))
         // Wordspace padding goes between repeats only — never after the last
         // audible play (a trailing gap caused an extra empty shift that replayed
         // the final Speed Racer slot at the wrong WPM).
