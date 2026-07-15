@@ -53,8 +53,12 @@ export class CardBufferManager {
     this._buffer.push(cardWord)
     // A kept-together line/sentence is a single card even though it contains
     // several space-separated morse "words" — Speed Racer must step once per
-    // full pass through all of them, not once per word.
-    this._subpartsPerRepeat = Math.max(1, cardWord.subparts.length)
+    // full pass through all of them, not once per word. Only count *audible*
+    // subparts: word files commonly have a trailing space before the line
+    // break, which parses into a genuinely empty trailing piece that never
+    // plays and so must not be counted, or the step index would never
+    // advance at the right rate.
+    this._subpartsPerRepeat = Math.max(1, cardWord.subparts.filter((sp) => sp.word && sp.word.length > 0).length)
     if (repeats > 0) {
       const audibleSubparts = cardWord.subparts.map((sp) => sp.word)
       cardWord.subparts = []

@@ -83,4 +83,18 @@ describe('CardBufferManager Speed Racer with a kept-together (Keep Lines) multi-
       { first: false, last: true }
     ])
   })
+
+  it('still advances once per pass when the card has a trailing empty piece', () => {
+    // Real word files commonly have a trailing space before an LF-only line
+    // break, which WordInfo parses into a genuinely empty trailing piece
+    // (e.g. "ITS BEEN A HEAT WAVE THIS LAST YEAR ") that never plays audibly
+    // and must not be counted toward the per-pass word count.
+    const mgr = createBufferManager('ITS BEEN A HEAT WAVE THIS LAST YEAR ')
+    const indices = shiftAudiblePlays(mgr, 3, 0)
+    expect(indices).toEqual([
+      0, 0, 0, 0, 0, 0, 0, 0,
+      1, 1, 1, 1, 1, 1, 1, 1,
+      2, 2, 2, 2, 2, 2, 2, 2
+    ])
+  })
 })
