@@ -444,12 +444,22 @@ html {
     justify-content: space-between;
     gap: 0.35rem;
     min-height: 2.375rem;
+    height: auto;
+    white-space: normal;
 }
 
 .lessons-picker-dropdown .dropdown-menu {
     width: 100%;
     max-height: var(--lesson-panel-height);
     overflow-y: auto;
+}
+
+/* Bootstrap's .dropdown-item defaults to white-space: nowrap, which lets
+   longer preset names (e.g. "OverLearn Words Flow Rate 2 SR") overflow the
+   fixed-width picker instead of wrapping like the shorter names do. */
+.lessons-picker-dropdown .dropdown-item {
+    white-space: normal;
+    overflow-wrap: break-word;
 }
 
 .lessons-picker-dropdown .dropdown-item.active,
