@@ -32,6 +32,8 @@ For each card:
 2. Optionally **speak** the card once (if **Speak Before Replay** is on).
 3. Optionally **replay** the card once at the **first multiplier** speed (if **Replay at First Multiplier** is on). This is not "highest speed" and not necessarily your main character WPM — ascending ladders may start slower than they end.
 
+**Keep Lines / multi-word cards:** A card is the race unit. When **Keep Lines** is on, each newline-chunked sentence or phrase is one card, and every multiplier plays that **entire** phrase at one speed (not word-by-word across the ladder).
+
 **FWPM during racing:** When a variation is faster than your saved FWPM, spacing stays at the saved base (Farnsworth). When variation WPM drops below saved FWPM (slow multipliers), spacing scales down with character speed so slow ladder steps stay cohesive.
 
 **Mutual exclusion:** Speed Racer and **Speed Intervals** cannot both be on; enabling one turns the other off.

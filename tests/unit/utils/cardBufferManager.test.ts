@@ -50,4 +50,39 @@ describe('CardBufferManager Speed Racer repeat spacing', () => {
     }
     expect(words).toEqual(['A', '', 'A', '', 'A'])
   })
+
+  it('races a Keep Lines phrase as one entity per multiplier (not per word)', () => {
+    const mgr = createBufferManager('THE QUICK BROWN FOX JUMPS')
+    const plays:Array<{ word:string, index:number }> = []
+    let next = mgr.getNextMorse(4, 1)
+    while (next !== undefined) {
+      if (next.length > 0) {
+        plays.push({ word: next, index: mgr.getRepeatState().index })
+      }
+      if (!mgr.hasMoreMorse()) {
+        break
+      }
+      next = mgr.getNextMorse(4, 1)
+    }
+    expect(plays).toEqual([
+      { word: 'THE QUICK BROWN FOX JUMPS', index: 0 },
+      { word: 'THE QUICK BROWN FOX JUMPS', index: 1 },
+      { word: 'THE QUICK BROWN FOX JUMPS', index: 2 },
+      { word: 'THE QUICK BROWN FOX JUMPS', index: 3 }
+    ])
+  })
+
+  it('still shifts multi-word cards word-by-word when not repeating', () => {
+    const mgr = createBufferManager('CQ DE')
+    const words:string[] = []
+    let next = mgr.getNextMorse(0, 0)
+    while (next !== undefined) {
+      words.push(next)
+      if (!mgr.hasMoreMorse()) {
+        break
+      }
+      next = mgr.getNextMorse(0, 0)
+    }
+    expect(words).toEqual(['CQ', 'DE'])
+  })
 })

@@ -43,12 +43,16 @@ export class CardBufferManager {
     const cardWord = new CardWord(this._getWords()[this._getCurrentIndex()].displayWord)
     this._buffer.push(cardWord)
     if (repeats > 0) {
-      const audibleSubparts = cardWord.subparts.map((sp) => sp.word)
+      // Each repeat is one audible play of the *entire* card (Keep Lines
+      // phrases, multi-word cards, etc.). Splitting the phrase into words and
+      // advancing the Speed Racer index per word made SR walk multipliers
+      // across words inside a sentence instead of racing the sentence as one
+      // entity. Non-repeat playback still uses space-split subparts so
+      // Trail/Voice can gate per word within a card.
+      const fullPhrase = cardWord.original
       cardWord.subparts = []
       for (let r = 0; r < repeats; r++) {
-        audibleSubparts.forEach((word) => {
-          cardWord.subparts.push(new CardWordSubPart(word))
-        })
+        cardWord.subparts.push(new CardWordSubPart(fullPhrase))
         // Wordspace padding goes between repeats only — never after the last
         // audible play (a trailing gap caused an extra empty shift that replayed
         // the final Speed Racer slot at the wrong WPM).

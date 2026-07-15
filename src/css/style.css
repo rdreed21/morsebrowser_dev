@@ -444,12 +444,21 @@ html {
     justify-content: space-between;
     gap: 0.35rem;
     min-height: 2.375rem;
+    /* Long OverLearn / Speed Racer preset names wrap instead of overflowing */
+    white-space: normal;
+    height: auto;
 }
 
 .lessons-picker-dropdown .dropdown-menu {
     width: 100%;
     max-height: var(--lesson-panel-height);
     overflow-y: auto;
+}
+
+.lessons-picker-dropdown .dropdown-item {
+    /* Bootstrap defaults to nowrap; wrap long OverLearn/SR preset labels */
+    white-space: normal;
+    overflow-wrap: break-word;
 }
 
 .lessons-picker-dropdown .dropdown-item.active,
