@@ -234,7 +234,7 @@ export default class MorseLessonPlugin implements ICookieHandler {
   upsertQueryStringVariable = (variable:string, value:string):string => {  
     const queryString = window.location.search
     const urlParams = new URLSearchParams(queryString)
-    const priority = ['selectedClass', 'selectedGroup', 'selectedLesson', 'selectedPreset']
+    const priority = ['selectedType', 'selectedClass', 'selectedGroup', 'selectedLesson', 'selectedPreset']
     // if not toggleQueryStringSettingsOn, then do nothing
     if (!this.queryStringSettingsOn) {
       return urlParams.toString()
@@ -1053,10 +1053,10 @@ export default class MorseLessonPlugin implements ICookieHandler {
 
     target = cookies.find(x => x.key === 'isShuffledSet')
     if (target) {
-      console.log(`found isShuffled cookie:${target.val}`)
-      if (GeneralUtils.booleanize(target.val)) {
-        this.morseViewModel.cachedShuffle = true
-      }
+      // Always assign true or false. Leaving a prior true when the new preset
+      // says false re-shuffles sending alphabet/numbers after OverLearn
+      // BINOMIALS (or any shuffled preset) was auto-selected first.
+      this.morseViewModel.cachedShuffle = GeneralUtils.booleanize(target.val)
     }
   }
 
