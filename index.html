@@ -34,7 +34,7 @@
             }
         })();
     </script>
-<link rel="icon" href="/morsebrowser_dev/LongIslandCWClub-favicon-2.jpg"><script defer src="/morsebrowser_dev/bundle880dc13f9f47e47c7305.js"></script><link href="/morsebrowser_dev/bundle.40867ae20e36687f1c8f.css" rel="stylesheet"></head>
+<link rel="icon" href="/morsebrowser_dev/LongIslandCWClub-favicon-2.jpg"><script defer src="/morsebrowser_dev/bundle94fc8dd3a731aa02aaa4.js"></script><link href="/morsebrowser_dev/bundle.5b769a4fc21e48554e45.css" rel="stylesheet"></head>
 <!--test8 test6 -->
 
 <body>
@@ -61,6 +61,11 @@
                                 <img class="theme-icon" height="18" width="18" alt=""
                                     data-bind="attr:{ src: darkMode() ? morseLoadImages().getSrc('sunImage') : morseLoadImages().getSrc('moonImage')}" />
                                 <span data-bind="text: darkMode() ? 'Light mode' : 'Dark mode'"></span>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm auto-close-toggle-btn"
+                                aria-label="Auto-close settings panels"
+                                data-bind="click: () => autoCloseSettingsAccordions(!autoCloseSettingsAccordions()), attr: { 'aria-pressed': autoCloseSettingsAccordions() ? 'true' : 'false', title: autoCloseSettingsAccordions() ? 'Settings panels close when you press Play' : 'Settings panels stay open when you press Play' }">
+                                <span aria-hidden="true" data-bind="text: autoCloseSettingsAccordions() ? 'Keep panels open' : 'Close on Play'"></span>
                             </button>
                         </div>
                     </div>
@@ -1238,7 +1243,7 @@
                     <button class="btn" title="Adds this text to the Flagged Cards text area"
                         data-bind="attr: { 'aria-current': $index()==$parent.currentIndex() ? 'true' : null}, class: $index()==$parent.currentIndex() ? ($index()==$parent.words().length-1 ? 'btn-danger' : 'btn-primary'): ($index()==$parent.words().length-1 ? 'btn-outline-danger' : 'btn-outline-primary' ) ,click:()=>$parent.addFlaggedWord($data), event:{dblclick: ()=>{$parent.setWordIndex($index())}}">
                         <span
-                            data-bind="style: {fontSize: $parent.cardFontPx } ,text: (!$parent.hideList() || ($parent.trailReveal() && $index() &lt;= $parent.maxRevealedTrail() )) ? $data.displayWord : 'X'.repeat($data.displayWord.replace('\r','').replace('\n','').trim().length)">
+                            data-bind="style: {fontSize: $parent.cardFontPx } ,text: (!$parent.hideList() || ($parent.trailReveal() && $index() &lt;= $parent.maxRevealedTrail() )) ? $data.displayWord : $data.maskedDisplay">
                         </span>
                     </button>
                 </div>
