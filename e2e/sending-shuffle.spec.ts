@@ -54,3 +54,10 @@ test('Bootcamp deep link keeps Sending Alphabet in order', async ({ page }) => {
   const firstThree = text.trim().split(/\s+/).slice(0, 3).map((w) => w.replace(/\[.*/, ''))
   expect(firstThree).toEqual(['A', 'B', 'C'])
 })
+
+test('selectedType=INSTRUCTOR deep link selects instructor TYPE', async ({ page }) => {
+  await page.goto('/?selectedType=INSTRUCTOR&selectedClass=BC1&selectedGroup=REA&selectedLesson=R')
+  await page.waitForTimeout(1000)
+  await expect(page.locator('#lessonsPickerTypeToggle')).toContainText('INSTRUCTOR')
+  await expect(page.locator('#lessonsPickerClassToggle')).toContainText('BC1')
+})

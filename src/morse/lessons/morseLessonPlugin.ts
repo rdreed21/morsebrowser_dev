@@ -315,14 +315,13 @@ export default class MorseLessonPlugin implements ICookieHandler {
 
   /**
    * Reload the lesson word file for the current preset. Reloading resets
-   * `isShuffled` (the `undoIsShuffled` extender fires on new text), so re-arm
-   * cachedShuffle to keep a shuffled set shuffled across the reload.
+   * `isShuffled` (the `undoIsShuffled` extender fires on new text). Do not
+   * re-arm `cachedShuffle` from the current UI shuffle state — a preset with
+   * `isShuffledSet: false` must clear it (see handleCookies). Keep shuffle
+   * across reload only when `cachedShuffle` is already true from the preset.
    */
   runLessonReinit = () => {
     this.deferredLessonReinit = false
-    if (this.morseViewModel.isShuffled()) {
-      this.morseViewModel.cachedShuffle = true
-    }
     this.setDisplaySelected(this.selectedDisplay(), true)
   }
 
@@ -617,6 +616,18 @@ export default class MorseLessonPlugin implements ICookieHandler {
 
   setUserTargetInitialized = () => {
     this.userTargetInitialized = true
+    // Apply TYPE before CLASS/CONTENT/LESSON — class lists are filtered by userTarget.
+    // Missing or invalid selectedType leaves the default STUDENT.
+    if (GeneralUtils.getParameterByName('selectedType')) {
+      const paramType = GeneralUtils.getParameterByName('selectedType').toUpperCase()
+      const targetType = this.userTargets().find(t => t.toUpperCase() === paramType)
+      if (targetType) {
+        this.changeUserTarget(targetType)
+        if (!this.queryStringSettingsOn) {
+          this.removeQueryStringVariable('selectedType')
+        }
+      }
+    }
   }
 
   setSelectedClassInitialized = () => {
@@ -710,6 +721,7 @@ export default class MorseLessonPlugin implements ICookieHandler {
       // console.log('usertarget')
       // console.log(`calling setPresetSelection from changeUserTarget:${userTarget}`)
       this.setPresetSelected(this.selectedSettingsPreset(), true)
+      this.upsertQueryStringVariable('selectedType', userTarget)
       if (fromClick === 'click') {
         this.morseViewModel.announce?.(`Type selected: ${userTarget}`)
         this.focusLessonPickerToggle('lessonsPickerTypeToggle')
